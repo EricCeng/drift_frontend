@@ -57,6 +57,10 @@ dependencies:
   flutter_html: ^3.0.0-beta.2
   # 本地化存储
   shared_preferences: ^2.3.2
+  # banner 轮播图插件
+  flutter_swiper_view: ^1.1.8
+  # Font Awesome 库
+  font_awesome_flutter: ^10.8.0
 
 dev_dependencies:
   flutter_test:
@@ -79,6 +83,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  # 定义资源
+  assets:
+    - assets/images/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
