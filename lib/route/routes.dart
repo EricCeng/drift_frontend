@@ -1,0 +1,45 @@
+// 路由管理类
+import 'package:drift_frontend/pages/home/home_page.dart';
+import 'package:drift_frontend/pages/web_view_page.dart';
+import 'package:flutter/material.dart';
+
+class Routes {
+  static Route<dynamic> generateRoute(RouteSettings settings) {
+    switch (settings.name) {
+      case RoutePath.home:
+        return pageRoute(HomePage(), settings: settings);
+      case RoutePath.webViewPage:
+        return pageRoute(WebViewPage(title: "首页跳转来的1"), settings: settings);
+    }
+    return pageRoute(Scaffold(
+      body: SafeArea(
+          child: Center(
+        child: Text("路由：${settings.name} 不存在"),
+      )),
+    ));
+  }
+
+  static MaterialPageRoute pageRoute(Widget page,
+      {RouteSettings? settings,
+      bool? fullscreenDialog,
+      bool? maintainState,
+      bool? allowSnapshotting}) {
+    return MaterialPageRoute(
+        builder: (context) {
+          return page;
+        },
+        settings: settings,
+        fullscreenDialog: fullscreenDialog ?? false,
+        maintainState: maintainState ?? true,
+        allowSnapshotting: allowSnapshotting ?? true);
+  }
+}
+
+// 定义所有路由地址
+class RoutePath {
+  // 首页
+  static const String home = "/";
+
+  // 网页页面（list item 二级）
+  static const String webViewPage = "web_view_page";
+}

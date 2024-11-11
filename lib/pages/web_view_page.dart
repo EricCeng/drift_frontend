@@ -1,9 +1,8 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class WebViewPage extends StatefulWidget {
-  final String title;
+  final String? title;
 
   const WebViewPage({super.key, required this.title});
 
@@ -14,11 +13,26 @@ class WebViewPage extends StatefulWidget {
 }
 
 class _WebViewPageState extends State<WebViewPage> {
+  String? name;
+
+  @override
+  void initState() {
+    super.initState();
+    // 组件初始化完成后获取路由参数
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      var map = ModalRoute.of(context)?.settings.arguments;
+      if (map is Map) {
+        name = map["name"];
+        setState(() {});
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(name ?? ""),
       ),
       body: SafeArea(
         child: Container(

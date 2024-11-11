@@ -1,5 +1,5 @@
-import 'package:drift_frontend/pages/web_view_page.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:drift_frontend/route/route_utils.dart';
+import 'package:drift_frontend/route/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_swiper_view/flutter_swiper_view.dart';
@@ -19,39 +19,48 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-          child: Column(
-        children: [
-          SizedBox(
-            height: 150.h,
-            width: double.infinity,
-            // 滑动窗口
-            child: Swiper(
-              itemCount: 3,
-              indicatorLayout: PageIndicatorLayout.NONE,
-              autoplay: true,
-              pagination: const SwiperPagination(),
-              control: const SwiperControl(),
+          child: SingleChildScrollView(
+        child: Column(
+          children: [
+            // banner
+            _banner(),
+            // 列表
+            ListView.builder(
+              shrinkWrap: true,
+              // ListView 内部去计算其所有子组件整体的高度，以让 SingleChildScrollView 知道整体的高度
+              physics: NeverScrollableScrollPhysics(),
+              // 禁止 ListView 的滑动事件，由 SingleChildScrollView 接管
               itemBuilder: (context, index) {
-                return Container(
-                  width: double.infinity,
-                  // margin: EdgeInsets.all(15),
-                  height: 150.h,
-                  color: Colors.lightBlue,
-                );
+                return _listItemView();
               },
-            ),
-          ),
-          // 填充剩余的页面
-          Expanded(
-              // 列表
-              child: ListView.builder(
-            itemBuilder: (context, index) {
-              return _listItemView();
-            },
-            itemCount: 20,
-          )),
-        ],
+              itemCount: 20,
+            )
+          ],
+        ),
       )),
+    );
+  }
+
+  Widget _banner() {
+    return SizedBox(
+      height: 150.h,
+      width: double.infinity,
+      // 滑动窗口
+      child: Swiper(
+        itemCount: 3,
+        indicatorLayout: PageIndicatorLayout.NONE,
+        autoplay: true,
+        pagination: const SwiperPagination(),
+        control: const SwiperControl(),
+        itemBuilder: (context, index) {
+          return Container(
+            width: double.infinity,
+            // margin: EdgeInsets.all(15),
+            height: 150.h,
+            color: Colors.lightBlue,
+          );
+        },
+      ),
     );
   }
 
@@ -60,12 +69,18 @@ class _HomePageState extends State<HomePage> {
     // 设置点击事件：GestureDetector & InkWell（有点击水波纹的效果）
     return GestureDetector(
       onTap: () {
+        // 隐式路由跳转
+        // Navigator.pushNamed(context, RoutePath.webViewPage);
+        // RouteUtils.push(context, WebViewPage(title: "首页跳转来的2"));
+        // 静态路由传值
+        RouteUtils.pushForNamed(context, RoutePath.webViewPage,
+            arguments: {"name": "使用路由传值"});
         // 跳转页面
-        Navigator.push(context, MaterialPageRoute(builder: (context) {
-          return WebViewPage(
-            title: "首页跳转来的",
-          );
-        }));
+        // Navigator.push(context, MaterialPageRoute(builder: (context) {
+        //   return WebViewPage(
+        //     title: "首页跳转来的",
+        //   );
+        // }));
       },
       // 上下结构用 column
       child: Container(
