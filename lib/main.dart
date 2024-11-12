@@ -1,3 +1,4 @@
+import 'package:drift_frontend/http/dio_instance.dart';
 import 'package:drift_frontend/route/route_utils.dart';
 import 'package:drift_frontend/route/routes.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:oktoast/oktoast.dart';
 
 void main() {
+  DioInstance.instance().initDio(baseUrl: "https://www.wanandroid.com");
   runApp(const MyApp());
 }
 

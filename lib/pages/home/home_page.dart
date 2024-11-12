@@ -1,9 +1,13 @@
+import 'package:drift_frontend/pages/home/home_vm.dart';
 import 'package:drift_frontend/route/route_utils.dart';
 import 'package:drift_frontend/route/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_swiper_view/flutter_swiper_view.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
+
+import '../../repository/data/home_list_data.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,57 +19,100 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  // List<BannerItemData>? bannerList;
+  HomeViewModel viewModel = HomeViewModel();
+
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-          child: SingleChildScrollView(
-        child: Column(
-          children: [
-            // banner
-            _banner(),
-            // 列表
-            ListView.builder(
-              shrinkWrap: true,
-              // ListView 内部去计算其所有子组件整体的高度，以让 SingleChildScrollView 知道整体的高度
-              physics: NeverScrollableScrollPhysics(),
-              // 禁止 ListView 的滑动事件，由 SingleChildScrollView 接管
-              itemBuilder: (context, index) {
-                return _listItemView();
-              },
-              itemCount: 20,
-            )
-          ],
-        ),
-      )),
-    );
+  void initState() {
+    super.initState();
+    // initBannerData();
+    // viewModel.initDio();
+    viewModel.getBanner();
+    viewModel.initHomeListData();
   }
 
-  Widget _banner() {
-    return SizedBox(
-      height: 150.h,
-      width: double.infinity,
-      // 滑动窗口
-      child: Swiper(
-        itemCount: 3,
-        indicatorLayout: PageIndicatorLayout.NONE,
-        autoplay: true,
-        pagination: const SwiperPagination(),
-        control: const SwiperControl(),
-        itemBuilder: (context, index) {
-          return Container(
-            width: double.infinity,
-            // margin: EdgeInsets.all(15),
-            height: 150.h,
-            color: Colors.lightBlue,
-          );
-        },
+  // void initBannerData() async {
+  //   bannerList = await HomeViewModel.getBanner();
+  //   // 异步获取数据后 setState 做下刷新
+  //   setState(() {});
+  // }
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider<HomeViewModel>(
+      create: (context) {
+        return viewModel;
+      },
+      child: Scaffold(
+        body: SafeArea(
+            child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // banner
+              _banner(),
+              // 列表
+              _homeListView()
+            ],
+          ),
+        )),
       ),
     );
   }
 
+  Widget _banner() {
+    return Consumer<HomeViewModel>(builder: (context, viewModel, child) {
+      print("banner 刷新");
+      return SizedBox(
+        height: 150.h,
+        width: double.infinity,
+        // 滑动窗口
+        child: Swiper(
+          itemCount: viewModel.bannerList?.length ?? 0,
+          indicatorLayout: PageIndicatorLayout.NONE,
+          autoplay: true,
+          pagination: const SwiperPagination(),
+          control: const SwiperControl(),
+          itemBuilder: (context, index) {
+            return Container(
+              width: double.infinity,
+              // margin: EdgeInsets.all(15),
+              height: 150.h,
+              color: Colors.white24,
+              child: Image.network(
+                viewModel.bannerList?[index]?.imagePath ?? "",
+                fit: BoxFit.fill,
+              ),
+            );
+          },
+        ),
+      );
+    });
+  }
+
+  Widget _homeListView() {
+    return Consumer<HomeViewModel>(builder: (context, viewModel, child) {
+      print("home list view 刷新");
+      return ListView.builder(
+        shrinkWrap: true,
+        // ListView 内部去计算其所有子组件整体的高度，以让 SingleChildScrollView 知道整体的高度
+        physics: NeverScrollableScrollPhysics(),
+        // 禁止 ListView 的滑动事件，由 SingleChildScrollView 接管
+        itemBuilder: (context, index) {
+          return _listItemView(viewModel.listData?[index]);
+        },
+        itemCount: viewModel.listData?.length ?? 0,
+      );
+    });
+  }
+
   // 设计列表 item
-  Widget _listItemView() {
+  Widget _listItemView(HomeListItemData? item) {
+    String author;
+    if (item?.author?.isNotEmpty == true) {
+      author = item?.author ?? "";
+    } else {
+      author = item?.shareUser ?? "";
+    }
     // 设置点击事件：GestureDetector & InkWell（有点击水波纹的效果）
     return GestureDetector(
       onTap: () {
@@ -95,6 +142,7 @@ class _HomePageState extends State<HomePage> {
               border: Border.all(color: Colors.black12, width: 0.5.r),
               borderRadius: BorderRadius.all(Radius.circular(6.r))),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 左右结构用 row
               Row(
@@ -120,25 +168,34 @@ class _HomePageState extends State<HomePage> {
                     width: 5.w,
                   ),
                   Text(
-                    "作者",
+                    author,
                     style: TextStyle(color: Colors.black),
                   ),
                   Expanded(child: SizedBox()),
                   Padding(
                     padding: EdgeInsets.only(right: 5.w),
-                    child: Text("2024-11-08 16:23:43",
+                    child: Text(item?.niceShareDate ?? "",
                         style: TextStyle(color: Colors.black, fontSize: 12.sp)),
                   ),
-                  Text("置顶",
-                      style: TextStyle(
-                          color: Colors.blue, fontWeight: FontWeight.bold)),
+                  // 置顶判断
+                  item?.type?.toInt() == 0
+                      ? Text("置顶",
+                          style: TextStyle(
+                              color: Colors.blue, fontWeight: FontWeight.bold))
+                      : SizedBox(),
                 ],
               ),
-              Text("标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标题标",
+              SizedBox(
+                height: 5.h,
+              ),
+              Text(item?.title ?? "",
                   style: TextStyle(color: Colors.black, fontSize: 14.sp)),
+              SizedBox(
+                height: 5.h,
+              ),
               Row(
                 children: [
-                  Text("分类",
+                  Text(item?.chapterName ?? "",
                       style: TextStyle(color: Colors.green, fontSize: 12.sp)),
                   Expanded(child: SizedBox()),
                   FaIcon(
