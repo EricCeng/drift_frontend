@@ -5,6 +5,7 @@ import '../../repository/data/home_banner_data.dart';
 import '../../repository/data/home_list_data.dart';
 
 class HomeViewModel with ChangeNotifier {
+  int page = 0;
   List<HomeBannerData?>? bannerList;
   List<HomeListItemData>? listData = [];
 
@@ -25,21 +26,34 @@ class HomeViewModel with ChangeNotifier {
     notifyListeners();
   }
 
-  Future initHomeListData() async {
-    await getHomeTopList();
-    await getHomeList();
-  }
-
-  // 获取首页文章列表
-  Future getHomeList() async {
-    listData?.addAll(await Api.instance.getHomeList() ?? []);
-    notifyListeners();
+  Future initHomeListData(bool loadMore) async {
+    if (loadMore) {
+      page++;
+    } else {
+      page = 0;
+    }
+    await getHomeTopList(loadMore);
+    await getHomeList(loadMore);
   }
 
   // 获取首页置顶列表
-  Future getHomeTopList() async {
-    listData?.clear();
-    listData?.addAll(await Api.instance.getHomeTopList() ?? []);
+  Future getHomeTopList(bool loadMore) async {
+    if (!loadMore) {
+      listData?.clear();
+      listData?.addAll(await Api.instance.getHomeTopList() ?? []);
+    }
+  }
+
+  // 获取首页文章列表
+  Future getHomeList(bool loadMore) async {
+    List<HomeListItemData>? list = await Api.instance.getHomeList("$page");
+    if (list != null && list.isNotEmpty) {
+      listData?.addAll(list);
+    } else {
+      if (loadMore && page > 0) {
+        page--;
+      }
+    }
     notifyListeners();
   }
 }

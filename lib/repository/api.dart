@@ -18,9 +18,9 @@ class Api {
   }
 
   // 获取首页文章列表
-  Future<List<HomeListItemData>?> getHomeList() async {
+  Future<List<HomeListItemData>?> getHomeList(String page) async {
     Response response =
-        await DioInstance.instance().get(path: "/article/list/0/json");
+        await DioInstance.instance().get(path: "/article/list/$page/json");
     HomeListData homeListData = HomeListData.fromJson(response.data);
     return homeListData.datas;
   }
@@ -28,7 +28,7 @@ class Api {
   // 获取首页置顶数据
   Future<List<HomeListItemData>?> getHomeTopList() async {
     Response response =
-    await DioInstance.instance().get(path: "/article/top/json");
+        await DioInstance.instance().get(path: "/article/top/json");
     HomeTopListData homeTopListData = HomeTopListData.fromJson(response.data);
     return homeTopListData.topList;
   }

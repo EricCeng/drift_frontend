@@ -1,3 +1,4 @@
+import 'package:drift_frontend/common_ui/smart_refresh_widget.dart';
 import 'package:drift_frontend/pages/home/home_vm.dart';
 import 'package:drift_frontend/route/route_utils.dart';
 import 'package:drift_frontend/route/routes.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_swiper_view/flutter_swiper_view.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 import '../../repository/data/home_list_data.dart';
 
@@ -21,6 +23,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   // List<BannerItemData>? bannerList;
   HomeViewModel viewModel = HomeViewModel();
+  RefreshController refreshController = RefreshController();
 
   @override
   void initState() {
@@ -28,7 +31,7 @@ class _HomePageState extends State<HomePage> {
     // initBannerData();
     // viewModel.initDio();
     viewModel.getBanner();
-    viewModel.initHomeListData();
+    viewModel.initHomeListData(false);
   }
 
   // void initBannerData() async {
@@ -36,6 +39,16 @@ class _HomePageState extends State<HomePage> {
   //   // 异步获取数据后 setState 做下刷新
   //   setState(() {});
   // }
+
+  void refreshOrLoadMore(bool loadMore) {
+    viewModel.initHomeListData(loadMore).then((value) {
+      if (loadMore) {
+        refreshController.loadComplete();
+      } else {
+        refreshController.refreshCompleted();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,16 +58,30 @@ class _HomePageState extends State<HomePage> {
       },
       child: Scaffold(
         body: SafeArea(
+          child: SmartRefreshWidget(
+            controller: refreshController,
+            onRefresh: () {
+              // 下拉刷新回调
+              viewModel.getBanner().then((value) {
+                refreshOrLoadMore(false);
+              });
+            },
+            onLoading: () {
+              // 上拉加载回调
+              refreshOrLoadMore(true);
+            },
             child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // banner
-              _banner(),
-              // 列表
-              _homeListView()
-            ],
-          ),
-        )),
+              child: Column(
+                children: [
+                  // banner
+                  _banner(),
+                  // 列表
+                  _homeListView()
+                ],
+              ),
+            ),
+          ), // 下拉刷新/上拉加载
+        ),
       ),
     );
   }
