@@ -43,7 +43,7 @@ class MyApp extends StatelessWidget {
               useMaterial3: true),
           navigatorKey: RouteUtils.navigatorKey,
           onGenerateRoute: Routes.generateRoute,
-          initialRoute: RoutePath.home,
+          initialRoute: RoutePath.tab,
           // home: const HomePage(),
         );
       },

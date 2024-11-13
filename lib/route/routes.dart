@@ -1,13 +1,13 @@
 // 路由管理类
-import 'package:drift_frontend/pages/home/home_page.dart';
+import 'package:drift_frontend/pages/tab_page.dart';
 import 'package:drift_frontend/pages/web_view_page.dart';
 import 'package:flutter/material.dart';
 
 class Routes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
-      case RoutePath.home:
-        return pageRoute(HomePage(), settings: settings);
+      case RoutePath.tab:
+        return pageRoute(TabPage(), settings: settings);
       case RoutePath.webViewPage:
         return pageRoute(WebViewPage(title: "首页跳转来的1"), settings: settings);
     }
@@ -38,7 +38,7 @@ class Routes {
 // 定义所有路由地址
 class RoutePath {
   // 首页
-  static const String home = "/";
+  static const String tab = "/";
 
   // 网页页面（list item 二级）
   static const String webViewPage = "web_view_page";

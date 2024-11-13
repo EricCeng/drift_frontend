@@ -1,11 +1,10 @@
-import 'package:drift_frontend/common_ui/smart_refresh_widget.dart';
+import 'package:drift_frontend/common_ui/smart_refresh/smart_refresh_widget.dart';
 import 'package:drift_frontend/pages/home/home_vm.dart';
 import 'package:drift_frontend/route/route_utils.dart';
 import 'package:drift_frontend/route/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_swiper_view/flutter_swiper_view.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
@@ -225,11 +224,19 @@ class _HomePageState extends State<HomePage> {
                   Text(item?.chapterName ?? "",
                       style: TextStyle(color: Colors.green, fontSize: 12.sp)),
                   Expanded(child: SizedBox()),
-                  FaIcon(
-                    FontAwesomeIcons.heart,
+                  // FaIcon(
+                  //   FontAwesomeIcons.heart,
+                  //   color: Colors.black26,
+                  //   size: 20,
+                  // )
+                  Icon(
+                    Icons.favorite_border,
                     color: Colors.black26,
-                    size: 20,
                   )
+                  // Icon(
+                  //   CupertinoIcons.heart,
+                  //   color: Colors.black26,
+                  // )
                 ],
               )
             ],
