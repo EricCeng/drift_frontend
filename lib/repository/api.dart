@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:drift_frontend/repository/data/common_website_data.dart';
+import 'package:drift_frontend/repository/data/search_hot_keys_data.dart';
 
 import '../http/dio_instance.dart';
 import 'data/home_banner_data.dart';
@@ -31,5 +33,21 @@ class Api {
         await DioInstance.instance().get(path: "/article/top/json");
     HomeTopListData homeTopListData = HomeTopListData.fromJson(response.data);
     return homeTopListData.topList;
+  }
+
+  // 获取常用网站数据
+  Future<List<CommonWebsiteData>?> getWebsiteList() async {
+    Response response = await DioInstance.instance().get(path: "/friend/json");
+    CommonWebsiteListData websiteListData =
+        CommonWebsiteListData.fromJson(response.data);
+    return websiteListData.websiteList;
+  }
+
+  // 获取搜索热词数据
+  Future<List<SearchHotKeysData>?> getSearchHotKeys() async {
+    Response response = await DioInstance.instance().get(path: "/hotkey/json");
+    SearchHotKeysListData hotKeysListData =
+        SearchHotKeysListData.fromJson(response.data);
+    return hotKeysListData.keyList;
   }
 }

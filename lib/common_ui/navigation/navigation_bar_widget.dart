@@ -53,6 +53,7 @@ class _NavigationBarWidgetState extends State<NavigationBarWidget> {
               splashColor: Colors.transparent,
               highlightColor: Colors.transparent),
           child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
             currentIndex: widget.currentIndex ?? 0,
             items: _barItemList(),
             onTap: (index) {
@@ -62,7 +63,7 @@ class _NavigationBarWidgetState extends State<NavigationBarWidget> {
               setState(() {});
             },
             unselectedItemColor: Colors.grey,
-            selectedItemColor: Colors.black54,
+            selectedItemColor: Colors.black87,
           )),
     );
   }

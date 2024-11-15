@@ -2,6 +2,7 @@ import 'package:drift_frontend/common_ui/navigation/navigation_bar_widget.dart';
 import 'package:drift_frontend/pages/home/home_page.dart';
 import 'package:drift_frontend/pages/message/message_page.dart';
 import 'package:drift_frontend/pages/personal/personal_page.dart';
+import 'package:drift_frontend/pages/search/search_page.dart';
 import 'package:flutter/material.dart';
 
 class TabPage extends StatefulWidget {
@@ -27,16 +28,26 @@ class _TabPageState extends State<TabPage> {
   late List<Widget> activeIcons;
 
   void initTabData() {
-    pages = [const HomePage(), const MessagePage(), const PersonalPage()];
-    labels = ["首页", "消息", "我"];
+    pages = [
+      const HomePage(),
+      const SearchPage(),
+      const MessagePage(),
+      const PersonalPage()
+    ];
+    labels = ["首页", "发现", "消息", "我"];
     icons = [
       const Icon(Icons.home_outlined),
+      const Icon(Icons.search),
       const Icon(Icons.email_outlined),
-      const Icon(Icons.person_outline_rounded)
+      const Icon(Icons.person_outline)
     ];
     activeIcons = [
       const Icon(
         Icons.home_rounded,
+        // size: 32,
+      ),
+      const Icon(
+        Icons.search_rounded,
         // size: 32,
       ),
       const Icon(

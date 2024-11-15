@@ -3,8 +3,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class WebViewPage extends StatefulWidget {
   final String? title;
+  final String? url;
 
-  const WebViewPage({super.key, required this.title});
+  const WebViewPage({super.key, required this.title, this.url});
 
   @override
   State<StatefulWidget> createState() {
