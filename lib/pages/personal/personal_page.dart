@@ -1,3 +1,5 @@
+import 'package:drift_frontend/pages/auth/login_page.dart';
+import 'package:drift_frontend/route/route_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -17,7 +19,9 @@ class _PersonalPage extends State<PersonalPage> {
       body: SafeArea(
           child: Column(
         children: [
-          _header(),
+          _header(() {
+            RouteUtils.push(context, LoginPage());
+          }),
           _settingsItem("我的收藏", () {}),
           _settingsItem("检查更新", () {}),
           _settingsItem("关于我们", () {})
@@ -26,7 +30,7 @@ class _PersonalPage extends State<PersonalPage> {
     );
   }
 
-  Widget _header() {
+  Widget _header(GestureTapCallback? onTap) {
     return Container(
       color: Colors.teal,
       width: double.infinity,
@@ -43,15 +47,24 @@ class _PersonalPage extends State<PersonalPage> {
           //     fit: BoxFit.cover,
           //   ),
           // ),
-          CircleAvatar(
-            backgroundImage:
-                AssetImage("assets/images/default_user_avatar.jpg"),
-            radius: 35.r,
+          GestureDetector(
+            onTap: onTap,
+            child: CircleAvatar(
+              backgroundImage:
+                  const AssetImage("assets/images/default_user_avatar.jpg"),
+              radius: 35.r,
+            ),
           ),
           SizedBox(
             height: 6.h,
           ),
-          Text("未登录", style: TextStyle(fontSize: 13.sp, color: Colors.white)),
+          GestureDetector(
+            onTap: onTap,
+            child: Text(
+              "未登录",
+              style: TextStyle(fontSize: 13.sp, color: Colors.white),
+            ),
+          ),
         ],
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:drift_frontend/repository/data/common_website_data.dart';
 import 'package:drift_frontend/repository/data/search_hot_keys_data.dart';
+import 'package:drift_frontend/repository/data/user_info_data.dart';
 
 import '../http/dio_instance.dart';
 import 'data/home_banner_data.dart';
@@ -49,5 +50,28 @@ class Api {
     SearchHotKeysListData hotKeysListData =
         SearchHotKeysListData.fromJson(response.data);
     return hotKeysListData.keyList;
+  }
+
+  // 注册
+  Future<dynamic> register(
+      {String? username, String? password, String? rePassword}) async {
+    Response response = await DioInstance.instance().post(
+        path: "/user/register",
+        queryParameters: {
+          "username": username,
+          "password": password,
+          "repassword": rePassword
+        });
+    return response.data;
+  }
+
+  // 登录
+  Future<UserInfoData> login({String? username, String? password}) async {
+    Response response = await DioInstance.instance()
+        .post(path: "/user/login", queryParameters: {
+      "username": username,
+      "password": password,
+    });
+    return UserInfoData.fromJson(response.data);
   }
 }

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:drift_frontend/http/cookie_interceptor.dart';
 import 'package:drift_frontend/http/print_log_interceptor.dart';
 import 'package:drift_frontend/http/response_interceptor.dart';
 
@@ -35,6 +36,7 @@ class DioInstance {
         sendTimeout: sendTimeout ?? _defaultTime,
         responseType: responseType,
         contentType: contentType);
+    _dio.interceptors.add(CookieInterceptor());
     _dio.interceptors.add(PrintLogInterceptor());
     _dio.interceptors.add(ResponseInterceptor());
   }

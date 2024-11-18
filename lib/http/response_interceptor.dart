@@ -22,6 +22,15 @@ class ResponseInterceptor extends Interceptor {
           handler.reject(DioException(
               requestOptions: response.requestOptions, message: "未登录"));
           showToast("请先登录");
+        } else if (rsp.errorCode == -1) {
+          showToast(rsp.errorMsg ?? "");
+          if (rsp.data == null) {
+            handler.next(
+                Response(requestOptions: response.requestOptions, data: false));
+          } else {
+            handler.next(Response(
+                requestOptions: response.requestOptions, data: rsp.data));
+          }
         }
       } catch (e) {
         handler.reject(DioException(
