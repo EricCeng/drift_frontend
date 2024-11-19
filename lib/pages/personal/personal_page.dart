@@ -1,7 +1,9 @@
 import 'package:drift_frontend/pages/auth/login_page.dart';
+import 'package:drift_frontend/pages/personal/personal_vm.dart';
 import 'package:drift_frontend/route/route_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
 
 class PersonalPage extends StatefulWidget {
   const PersonalPage({super.key});
@@ -13,20 +15,47 @@ class PersonalPage extends StatefulWidget {
 }
 
 class _PersonalPage extends State<PersonalPage> {
+  PersonViewModel viewModel = PersonViewModel();
+
+  @override
+  void initState() {
+    super.initState();
+    viewModel.initData();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-          child: Column(
-        children: [
-          _header(() {
-            RouteUtils.push(context, LoginPage());
-          }),
-          _settingsItem("我的收藏", () {}),
-          _settingsItem("检查更新", () {}),
-          _settingsItem("关于我们", () {})
-        ],
-      )),
+    return ChangeNotifierProvider(
+      create: (context) {
+        return viewModel;
+      },
+      child: Scaffold(
+        body: SafeArea(
+            child: Column(
+          children: [
+            _header(() {
+              if (viewModel.shouldLogin) {
+                RouteUtils.push(context, LoginPage());
+              }
+            }),
+            _settingsItem("我的收藏", () {}),
+            _settingsItem("检查更新", () {}),
+            _settingsItem("关于我们", () {}),
+            Consumer<PersonViewModel>(builder: (context, viewModel, child) {
+              if (viewModel.shouldLogin) {
+                return const SizedBox();
+              }
+              return _settingsItem("退出登录", () {
+                viewModel.logout((value) {
+                  if (value == true) {
+                    RouteUtils.pushAndRemoveUntil(context, LoginPage());
+                  }
+                });
+              });
+            }),
+          ],
+        )),
+      ),
     );
   }
 
@@ -58,13 +87,15 @@ class _PersonalPage extends State<PersonalPage> {
           SizedBox(
             height: 6.h,
           ),
-          GestureDetector(
-            onTap: onTap,
-            child: Text(
-              "未登录",
-              style: TextStyle(fontSize: 13.sp, color: Colors.white),
-            ),
-          ),
+          Consumer<PersonViewModel>(builder: (context, viewModel, child) {
+            return GestureDetector(
+              onTap: onTap,
+              child: Text(
+                viewModel.username ?? "",
+                style: TextStyle(fontSize: 13.sp, color: Colors.white),
+              ),
+            );
+          }),
         ],
       ),
     );

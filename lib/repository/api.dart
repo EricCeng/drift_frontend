@@ -74,4 +74,32 @@ class Api {
     });
     return UserInfoData.fromJson(response.data);
   }
+
+  // 登出
+  Future<bool?> logout() async {
+    Response response =
+        await DioInstance.instance().get(path: "/user/logout/json");
+    return boolCallback(response.data);
+  }
+
+  // 收藏
+  Future<bool?> collect(String? id) async {
+    Response response =
+        await DioInstance.instance().post(path: "/lg/collect/$id/json");
+    return boolCallback(response.data);
+  }
+
+  // 取消收藏
+  Future<bool?> unCollect(String? id) async {
+    Response response = await DioInstance.instance()
+        .post(path: "/lg/uncollect_originId/$id/json");
+    return boolCallback(response.data);
+  }
+
+  bool? boolCallback(dynamic data) {
+    if (data != null && data is bool) {
+      return data;
+    }
+    return false;
+  }
 }

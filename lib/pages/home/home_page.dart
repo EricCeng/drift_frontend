@@ -124,7 +124,7 @@ class _HomePageState extends State<HomePage> {
         physics: NeverScrollableScrollPhysics(),
         // 禁止 ListView 的滑动事件，由 SingleChildScrollView 接管
         itemBuilder: (context, index) {
-          return _listItemView(viewModel.listData?[index]);
+          return _listItemView(viewModel.listData?[index], index);
         },
         itemCount: viewModel.listData?.length ?? 0,
       );
@@ -132,7 +132,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // 设计列表 item
-  Widget _listItemView(HomeListItemData? item) {
+  Widget _listItemView(HomeListItemData? item, int index) {
     String author;
     if (item?.author?.isNotEmpty == true) {
       author = item?.author ?? "";
@@ -228,10 +228,26 @@ class _HomePageState extends State<HomePage> {
                   //   FontAwesomeIcons.heart,
                   //   color: Colors.black26,
                   //   size: 20,
-                  // )
-                  Icon(
-                    Icons.favorite_border,
-                    color: Colors.black26,
+                  // )S
+                  GestureDetector(
+                    onTap: () {
+                      bool isCollect;
+                      if (item?.collect == true) {
+                        isCollect = false;
+                      } else {
+                        isCollect = true;
+                      }
+                      viewModel.collect(isCollect, "${item?.id}", index);
+                    },
+                    child: item?.collect == true
+                        ? Icon(
+                            Icons.favorite_rounded,
+                            color: Colors.redAccent,
+                          )
+                        : Icon(
+                            Icons.favorite_border_rounded,
+                            color: Colors.black26,
+                          ),
                   )
                   // Icon(
                   //   CupertinoIcons.heart,

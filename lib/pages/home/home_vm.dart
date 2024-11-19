@@ -56,4 +56,14 @@ class HomeViewModel with ChangeNotifier {
     }
     notifyListeners();
   }
+
+  Future collect(bool isCollect, String? id, int index) async {
+    bool? success = isCollect
+        ? await Api.instance.collect(id)
+        : await Api.instance.unCollect(id);
+    if (success == true) {
+      listData?[index].collect = isCollect;
+      notifyListeners();
+    }
+  }
 }
