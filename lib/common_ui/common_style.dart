@@ -1,6 +1,13 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+// 标题文本 15 号
+TextStyle titleTextStyle15 = TextStyle(color: Colors.black, fontSize: 15.sp);
+
+// 普通字体，只做判空处理
+Text normalText(String? text) {
+  return Text(text ?? "", style: titleTextStyle15);
+}
 
 // 通用输入框
 Widget commonInput(
