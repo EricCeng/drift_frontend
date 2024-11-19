@@ -1,8 +1,10 @@
 import 'package:drift_frontend/common_ui/navigation/navigation_bar_widget.dart';
 import 'package:drift_frontend/pages/home/home_page.dart';
+import 'package:drift_frontend/pages/knowledge/knowledge_page.dart';
 import 'package:drift_frontend/pages/message/message_page.dart';
 import 'package:drift_frontend/pages/personal/personal_page.dart';
 import 'package:drift_frontend/pages/search/search_page.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class TabPage extends StatefulWidget {
@@ -30,34 +32,25 @@ class _TabPageState extends State<TabPage> {
   void initTabData() {
     pages = [
       const HomePage(),
+      const KnowledgePage(),
       const SearchPage(),
       const MessagePage(),
       const PersonalPage()
     ];
-    labels = ["首页", "发现", "消息", "我"];
+    labels = ["首页", "体系", "发现", "消息", "我"];
     icons = [
       const Icon(Icons.home_outlined),
-      const Icon(Icons.search),
-      const Icon(Icons.email_outlined),
-      const Icon(Icons.person_outline)
+      const Icon(CupertinoIcons.book),
+      const Icon(CupertinoIcons.compass),
+      const Icon(CupertinoIcons.chat_bubble),
+      const Icon(CupertinoIcons.person)
     ];
     activeIcons = [
-      const Icon(
-        Icons.home_rounded,
-        // size: 32,
-      ),
-      const Icon(
-        Icons.search_rounded,
-        // size: 32,
-      ),
-      const Icon(
-        Icons.email_rounded,
-        // size: 32,
-      ),
-      const Icon(
-        Icons.person,
-        // size: 32,
-      )
+      const Icon(Icons.home_rounded),
+      const Icon(CupertinoIcons.book_fill),
+      const Icon(CupertinoIcons.compass_fill),
+      const Icon(CupertinoIcons.chat_bubble_fill),
+      const Icon(CupertinoIcons.person_fill)
     ];
   }
 

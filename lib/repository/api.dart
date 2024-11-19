@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:drift_frontend/repository/data/common_website_data.dart';
+import 'package:drift_frontend/repository/data/knowledge_list_data.dart';
 import 'package:drift_frontend/repository/data/search_hot_keys_data.dart';
 import 'package:drift_frontend/repository/data/user_info_data.dart';
 
@@ -94,6 +95,13 @@ class Api {
     Response response = await DioInstance.instance()
         .post(path: "/lg/uncollect_originId/$id/json");
     return boolCallback(response.data);
+  }
+
+  // 获取体系数据列表
+  Future<List<KnowledgeListData?>?> knowledgeList() async {
+    Response response = await DioInstance.instance().get(path: "/tree/json");
+    KnowledgeData knowledgeData = KnowledgeData.fromJson(response.data);
+    return knowledgeData.list;
   }
 
   bool? boolCallback(dynamic data) {

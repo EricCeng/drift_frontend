@@ -63,7 +63,7 @@ class _NavigationBarWidgetState extends State<NavigationBarWidget> {
               setState(() {});
             },
             unselectedItemColor: Colors.grey,
-            selectedItemColor: Colors.black87,
+            selectedItemColor: Colors.black54,
           )),
     );
   }
