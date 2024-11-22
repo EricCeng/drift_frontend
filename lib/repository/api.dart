@@ -117,9 +117,9 @@ class Api {
   }
 
   // 搜索数据
-  Future<List<SearchListItemData>?> searchList(String? keyword) async {
+  Future<List<SearchListItemData>?> searchList(String? page, String? keyword) async {
     Response response = await DioInstance.instance()
-        .post(path: "/article/query/0/json", queryParameters: {"k": keyword});
+        .post(path: "/article/query/$page/json", queryParameters: {"k": keyword});
     var searchListData = SearchListData.fromJson(response.data);
     return searchListData.datas;
   }

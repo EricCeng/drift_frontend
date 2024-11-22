@@ -1,3 +1,4 @@
+import 'package:drift_frontend/common_ui/loading.dart';
 import 'package:drift_frontend/common_ui/smart_refresh/smart_refresh_widget.dart';
 import 'package:drift_frontend/pages/home/home_vm.dart';
 import 'package:drift_frontend/route/route_utils.dart';
@@ -29,8 +30,9 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     // initBannerData();
     // viewModel.initDio();
+    Loading.showLoading();
     viewModel.getBanner();
-    viewModel.initHomeListData(false);
+    refreshOrLoadMore(false);
   }
 
   // void initBannerData() async {
@@ -46,6 +48,7 @@ class _HomePageState extends State<HomePage> {
       } else {
         refreshController.refreshCompleted();
       }
+      Loading.dismissAll();
     });
   }
 
@@ -121,7 +124,7 @@ class _HomePageState extends State<HomePage> {
       return ListView.builder(
         shrinkWrap: true,
         // ListView 内部去计算其所有子组件整体的高度，以让 SingleChildScrollView 知道整体的高度
-        physics: NeverScrollableScrollPhysics(),
+        physics: const NeverScrollableScrollPhysics(),
         // 禁止 ListView 的滑动事件，由 SingleChildScrollView 接管
         itemBuilder: (context, index) {
           return _listItemView(viewModel.listData?[index], index);
@@ -185,7 +188,7 @@ class _HomePageState extends State<HomePage> {
                   //   ),
                   // ),
                   CircleAvatar(
-                    backgroundImage: NetworkImage(
+                    backgroundImage: const NetworkImage(
                         // "https://pic2.zhimg.com/v2-1c87fba3bf5c0ced0aedf44c91832941_r.jpg",
                         "https://img-baofun.zhhainiao.com/pcwallpaper_ugc/static/ca9ee136145baaa56052ddfcc75c3386.jpg?x-oss-process=image%2fresize%2cm_lfit%2cw_1920%2ch_1080"),
                     radius: 15.r,
@@ -195,9 +198,9 @@ class _HomePageState extends State<HomePage> {
                   ),
                   Text(
                     author,
-                    style: TextStyle(color: Colors.black),
+                    style: const TextStyle(color: Colors.black),
                   ),
-                  Expanded(child: SizedBox()),
+                  const Expanded(child: SizedBox()),
                   Padding(
                     padding: EdgeInsets.only(right: 5.w),
                     child: Text(item?.niceShareDate ?? "",
@@ -205,10 +208,10 @@ class _HomePageState extends State<HomePage> {
                   ),
                   // 置顶判断
                   item?.type?.toInt() == 0
-                      ? Text("置顶",
+                      ? const Text("置顶",
                           style: TextStyle(
                               color: Colors.blue, fontWeight: FontWeight.bold))
-                      : SizedBox(),
+                      : const SizedBox(),
                 ],
               ),
               SizedBox(
@@ -223,7 +226,7 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Text(item?.chapterName ?? "",
                       style: TextStyle(color: Colors.green, fontSize: 12.sp)),
-                  Expanded(child: SizedBox()),
+                  const Expanded(child: SizedBox()),
                   // FaIcon(
                   //   FontAwesomeIcons.heart,
                   //   color: Colors.black26,
@@ -240,11 +243,11 @@ class _HomePageState extends State<HomePage> {
                       viewModel.collect(isCollect, "${item?.id}", index);
                     },
                     child: item?.collect == true
-                        ? Icon(
+                        ? const Icon(
                             Icons.favorite_rounded,
                             color: Colors.redAccent,
                           )
-                        : Icon(
+                        : const Icon(
                             Icons.favorite_border_rounded,
                             color: Colors.black26,
                           ),

@@ -1,4 +1,5 @@
 import 'package:drift_frontend/common_ui/common_style.dart';
+import 'package:drift_frontend/common_ui/loading.dart';
 import 'package:drift_frontend/common_ui/smart_refresh/smart_refresh_widget.dart';
 import 'package:drift_frontend/pages/knowledge/detail/knowledge_detail_vm.dart';
 import 'package:drift_frontend/repository/data/knowledge_detail_list_data.dart';
@@ -25,7 +26,19 @@ class _KnowledgeTabChildPageState extends State<KnowledgeTabChildPage> {
   @override
   void initState() {
     super.initState();
-    viewModel.getDetailList(widget.cid, false);
+    Loading.showLoading();
+    _refreshOrLoadMore(false);
+  }
+
+  void _refreshOrLoadMore(bool loadMore) async {
+    viewModel.getDetailList(widget.cid, loadMore).then((value) {
+      if (loadMore) {
+        refreshController.loadComplete();
+      } else {
+        refreshController.refreshCompleted();
+      }
+      Loading.dismissAll();
+    });
   }
 
   @override
@@ -40,13 +53,13 @@ class _KnowledgeTabChildPageState extends State<KnowledgeTabChildPage> {
             return SmartRefreshWidget(
               controller: refreshController,
               onRefresh: () {
-                _refreshOrLoad(false);
+                _refreshOrLoadMore(false);
               },
               onLoading: () {
-                _refreshOrLoad(true);
+                _refreshOrLoadMore(true);
               },
               child: ListView.builder(
-                itemCount: viewModel.detailList.length ?? 0,
+                itemCount: viewModel.detailList.length,
                 itemBuilder: (context, index) {
                   return _item(viewModel.detailList[index], onTap: () {});
                 },
@@ -56,16 +69,6 @@ class _KnowledgeTabChildPageState extends State<KnowledgeTabChildPage> {
         ),
       ),
     );
-  }
-
-  void _refreshOrLoad(bool loadMore) async {
-    viewModel.getDetailList(widget.cid, loadMore).then((value) {
-      if (loadMore) {
-        refreshController.loadComplete();
-      } else {
-        refreshController.refreshCompleted();
-      }
-    });
   }
 
   Widget _item(KnowledgeDetailItem? item, {GestureTapCallback? onTap}) {
@@ -81,7 +84,7 @@ class _KnowledgeTabChildPageState extends State<KnowledgeTabChildPage> {
             Row(
               children: [
                 normalText(item?.superChapterName),
-                Expanded(child: SizedBox()),
+                const Expanded(child: SizedBox()),
                 Text("${item?.niceShareDate}"),
               ],
             ),
@@ -89,7 +92,7 @@ class _KnowledgeTabChildPageState extends State<KnowledgeTabChildPage> {
             Row(
               children: [
                 normalText(item?.chapterName),
-                Expanded(child: SizedBox()),
+                const Expanded(child: SizedBox()),
                 Text("${item?.shareUser}"),
               ],
             )
