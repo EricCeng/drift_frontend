@@ -4,7 +4,7 @@ import 'package:flutter/cupertino.dart';
 import '../../repository/data/common_website_data.dart';
 import '../../repository/data/search_hot_keys_data.dart';
 
-class SearchViewModel with ChangeNotifier {
+class HotKeyViewModel with ChangeNotifier {
   List<CommonWebsiteData>? websiteList;
   List<SearchHotKeysData>? keyList;
 

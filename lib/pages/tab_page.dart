@@ -3,7 +3,7 @@ import 'package:drift_frontend/pages/home/home_page.dart';
 import 'package:drift_frontend/pages/knowledge/knowledge_page.dart';
 import 'package:drift_frontend/pages/message/message_page.dart';
 import 'package:drift_frontend/pages/personal/personal_page.dart';
-import 'package:drift_frontend/pages/search/search_page.dart';
+import 'package:drift_frontend/pages/hot_key/hot_key_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -33,7 +33,7 @@ class _TabPageState extends State<TabPage> {
     pages = [
       const HomePage(),
       const KnowledgePage(),
-      const SearchPage(),
+      const HotKeyPage(),
       const MessagePage(),
       const PersonalPage()
     ];

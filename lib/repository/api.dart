@@ -3,6 +3,7 @@ import 'package:drift_frontend/repository/data/common_website_data.dart';
 import 'package:drift_frontend/repository/data/knowledge_detail_list_data.dart';
 import 'package:drift_frontend/repository/data/knowledge_list_data.dart';
 import 'package:drift_frontend/repository/data/search_hot_keys_data.dart';
+import 'package:drift_frontend/repository/data/search_list_data.dart';
 import 'package:drift_frontend/repository/data/user_info_data.dart';
 
 import '../http/dio_instance.dart';
@@ -113,6 +114,14 @@ class Api {
     var knowledgeDetailListData =
         KnowledgeDetailListData.fromJson(response.data);
     return knowledgeDetailListData.datas;
+  }
+
+  // 搜索数据
+  Future<List<SearchListItemData>?> searchList(String? keyword) async {
+    Response response = await DioInstance.instance()
+        .post(path: "/article/query/0/json", queryParameters: {"k": keyword});
+    var searchListData = SearchListData.fromJson(response.data);
+    return searchListData.datas;
   }
 
   bool? boolCallback(dynamic data) {

@@ -1,29 +1,32 @@
-import 'package:drift_frontend/pages/search/search_vm.dart';
-import 'package:drift_frontend/pages/web_view_page.dart';
-import 'package:drift_frontend/repository/data/common_website_data.dart';
+import 'package:drift_frontend/pages/search/search_view.dart';
 import 'package:drift_frontend/route/route_utils.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
-import '../../repository/data/search_hot_keys_data.dart';
-
 class SearchPage extends StatefulWidget {
-  const SearchPage({super.key});
+  const SearchPage({super.key, this.keyword});
+
+  final String? keyword;
 
   @override
   State<StatefulWidget> createState() {
-    return _SearchPage();
+    return _SearchPageState();
   }
 }
 
-class _SearchPage extends State<SearchPage> {
+class _SearchPageState extends State<SearchPage> {
+  late TextEditingController inputController;
   SearchViewModel viewModel = SearchViewModel();
 
   @override
   void initState() {
     super.initState();
-    viewModel.initData();
+    inputController = TextEditingController(text: widget.keyword ?? "");
+    viewModel.search(widget.keyword);
   }
 
   @override
@@ -34,121 +37,114 @@ class _SearchPage extends State<SearchPage> {
       },
       child: Scaffold(
         body: SafeArea(
-            child: SingleChildScrollView(
-          child: Expanded(
-              child: Column(
-            children: [
-              // 搜索热词-标题
-              Container(
-                height: 45.h,
-                decoration: BoxDecoration(
-                    border: Border(
-                        top: BorderSide(width: 1.r, color: Colors.grey),
-                        bottom: BorderSide(width: 1.r, color: Colors.grey))),
-                padding: EdgeInsets.only(left: 20.w, right: 20.w),
-                child: Row(
-                  children: [
-                    Text(
-                      "搜索热词",
-                      style: TextStyle(fontSize: 14.sp, color: Colors.black),
-                    ),
-                    Expanded(child: SizedBox()),
-                    Icon(
-                      Icons.search_rounded,
-                      size: 30.sp,
-                    )
-                  ],
+            child: Column(
+          children: [
+            // 搜索框
+            _searchBar(
+              onBack: () {
+                RouteUtils.pop(context);
+              },
+              onCancel: () {
+                inputController.text = "";
+                viewModel.clear();
+                FocusScope.of(context).unfocus();
+              },
+              onSubmitted: (value) {
+                viewModel.search(value);
+                // 回车搜索后隐藏软键盘
+                // 方式一 原生
+                // SystemChannels.textInput.invokeMethod("TextInput.hide");
+                // 方式二
+                FocusScope.of(context).unfocus();
+              },
+            ),
+            // ListView
+            Consumer<SearchViewModel>(builder: (context, viewModel, child) {
+              return Expanded(
+                child: ListView.builder(
+                  itemCount: viewModel.searchList?.length ?? 0,
+                  itemBuilder: (context, index) {
+                    return _listItem(
+                      viewModel.searchList?[index].title ?? "",
+                      () {},
+                    );
+                  },
                 ),
-              ),
-              // 搜索热词-网格列表
-              Consumer<SearchViewModel>(builder: (context, viewModel, child) {
-                return _gridView(false,
-                    keyList: viewModel.keyList, itemTap: (value) {});
-              }),
-              // 常用网站-标题
-              Container(
-                height: 45.h,
-                alignment: Alignment.centerLeft,
-                decoration: BoxDecoration(
-                    border: Border(
-                        top: BorderSide(width: 1.r, color: Colors.grey),
-                        bottom: BorderSide(width: 1.r, color: Colors.grey))),
-                margin: EdgeInsets.only(top: 20.h),
-                padding: EdgeInsets.only(left: 20.w, right: 20.w),
-                child: Text(
-                  "常用网站",
-                  style: TextStyle(fontSize: 14.sp, color: Colors.black),
-                ),
-              ),
-              // 常用网站-网格列表
-              Consumer<SearchViewModel>(builder: (context, viewModel, child) {
-                return _gridView(true, websiteList: viewModel.websiteList,
-                    itemTap: (value) {
-                  RouteUtils.push(
-                      context,
-                      WebViewPage(
-                        title: "常用网站",
-                        url: value,
-                      ));
-                });
-              }),
-            ],
-          )),
+              );
+            })
+          ],
         )),
       ),
     );
   }
 
-  Widget _gridView(bool? isWebsite,
-      {List<CommonWebsiteData>? websiteList,
-      List<SearchHotKeysData>? keyList,
-      ValueChanged<String>? itemTap}) {
-    return Container(
-        // 上边距
-        margin: EdgeInsets.only(top: 20.h),
-        // 左右缩进
-        padding: EdgeInsets.symmetric(horizontal: 20.w),
-        child: GridView.builder(
-          physics: NeverScrollableScrollPhysics(),
-          shrinkWrap: true,
-          // 定义网格布局，各网格间距宽高比等
-          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            mainAxisSpacing: 8.r, // 主轴间隔
-            maxCrossAxisExtent: 120.w, // 最大横轴范围
-            childAspectRatio: 3, // 宽高比
-            crossAxisSpacing: 10.r, // 横轴间隔
-          ),
-          itemBuilder: (context, index) {
-            if (isWebsite == true) {
-              return _item(
-                  name: websiteList?[index].name,
-                  itemTap: itemTap,
-                  link: websiteList?[index].link);
-            } else {
-              return _item(name: keyList?[index].name, itemTap: itemTap);
-            }
-          },
-          itemCount: isWebsite == true
-              ? websiteList?.length ?? 0
-              : keyList?.length ?? 0,
-        ));
+  Widget _listItem(String? title, GestureTapCallback? onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+            border:
+                Border(bottom: BorderSide(width: 1.r, color: Colors.black12))),
+        padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 10.h),
+        child: Html(
+          data: title ?? "",
+          style: {'html': Style(fontSize: FontSize(15.sp))},
+        ),
+      ),
+    );
   }
 
-  Widget _item({String? name, ValueChanged<String>? itemTap, String? link}) {
-    return GestureDetector(
-        onTap: () {
-          if (link != null) {
-            itemTap?.call(link);
-          } else {
-            itemTap?.call(name ?? "");
-          }
-        },
-        child: Container(
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey, width: 1.r),
-              borderRadius: BorderRadius.all(Radius.circular(10.r))),
-          child: Text(name ?? ""),
-        ));
+  Widget _searchBar(
+      {GestureTapCallback? onBack,
+      GestureTapCallback? onCancel,
+      ValueChanged<String>? onSubmitted}) {
+    return Container(
+      height: 50.h,
+      width: double.infinity,
+      color: Colors.white24,
+      child: Row(
+        children: [
+          SizedBox(width: 10.w),
+          GestureDetector(
+            onTap: onBack,
+            child:
+                const Icon(CupertinoIcons.left_chevron, color: Colors.black54),
+          ),
+          Expanded(
+            child: Container(
+              padding: EdgeInsets.all(8.r),
+              child: TextField(
+                keyboardType: TextInputType.text,
+                textInputAction: TextInputAction.search,
+                onSubmitted: onSubmitted,
+                controller: inputController,
+                decoration: InputDecoration(
+                  prefixIcon: Icon(
+                    CupertinoIcons.search,
+                    color: Colors.black38,
+                    size: 20.sp,
+                  ),
+                  fillColor: Colors.grey[220],
+                  filled: true,
+                  contentPadding: EdgeInsets.only(left: 10.w),
+                  enabledBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.white24),
+                      borderRadius: BorderRadius.circular(15.r)),
+                  focusedBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.white24),
+                      borderRadius: BorderRadius.circular(15.r)),
+                ),
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: onCancel,
+            child: Text("取消",
+                style: TextStyle(color: Colors.black45, fontSize: 16.sp)),
+          ),
+          SizedBox(width: 15.w),
+        ],
+      ),
+    );
   }
 }
