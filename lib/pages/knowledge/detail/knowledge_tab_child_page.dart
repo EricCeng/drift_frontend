@@ -61,7 +61,11 @@ class _KnowledgeTabChildPageState extends State<KnowledgeTabChildPage> {
               child: ListView.builder(
                 itemCount: viewModel.detailList.length,
                 itemBuilder: (context, index) {
-                  return _item(viewModel.detailList[index], onTap: () {});
+                  return _item(
+                      viewModel.detailList.isNotEmpty == true
+                          ? viewModel.detailList[index]
+                          : KnowledgeDetailItem(),
+                      onTap: () {});
                 },
               ),
             );

@@ -56,7 +56,7 @@ class _HotKeyPageState extends State<HotKeyPage> {
                     const Expanded(child: SizedBox()),
                     GestureDetector(
                       onTap: () {
-                        RouteUtils.push(context, const SearchPage());
+                        RouteUtils.push(context, SearchPage());
                       },
                       child: Icon(
                         Icons.search_rounded,

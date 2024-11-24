@@ -1,6 +1,6 @@
 import 'package:drift_frontend/common_ui/loading.dart';
 import 'package:drift_frontend/common_ui/smart_refresh/smart_refresh_widget.dart';
-import 'package:drift_frontend/pages/search/search_view.dart';
+import 'package:drift_frontend/pages/search/search_vm.dart';
 import 'package:drift_frontend/route/route_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -10,9 +10,9 @@ import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class SearchPage extends StatefulWidget {
-  const SearchPage({super.key, this.keyword});
+  SearchPage({super.key, this.keyword});
 
-  final String? keyword;
+  String? keyword;
 
   @override
   State<StatefulWidget> createState() {
@@ -66,6 +66,9 @@ class _SearchPageState extends State<SearchPage> {
               },
               onSubmitted: (value) {
                 Loading.showLoading();
+                setState(() {
+                  widget.keyword = value;
+                });
                 _refreshOrLoadMore(false);
                 // 回车搜索后隐藏软键盘
                 // 方式一 原生
@@ -90,7 +93,10 @@ class _SearchPageState extends State<SearchPage> {
                       itemCount: viewModel.searchList.length,
                       itemBuilder: (context, index) {
                         return _listItem(
-                            viewModel.searchList[index].title ?? "", () {});
+                            viewModel.searchList.isNotEmpty == true
+                                ? (viewModel.searchList[index].title)
+                                : "",
+                            () {});
                       },
                     ),
                   );

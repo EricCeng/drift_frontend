@@ -22,7 +22,7 @@ class Routes {
       case RoutePath.knowledgeDetailPage:
         return pageRoute(const KnowledgeDetailTabPage(), settings: settings);
       case RoutePath.searchPage:
-        return pageRoute(const SearchPage(), settings: settings);
+        return pageRoute(SearchPage(), settings: settings);
     }
     return pageRoute(Scaffold(
       body: SafeArea(
