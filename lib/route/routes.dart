@@ -1,11 +1,13 @@
 // 路由管理类
+import 'package:drift_frontend/common_ui/web/webview_widget.dart';
 import 'package:drift_frontend/pages/auth/login_page.dart';
 import 'package:drift_frontend/pages/auth/register_page.dart';
 import 'package:drift_frontend/pages/knowledge/detail/knowledge_detail_tab_page.dart';
 import 'package:drift_frontend/pages/search/search_page.dart';
 import 'package:drift_frontend/pages/tab_page.dart';
-import 'package:drift_frontend/pages/web_view_page.dart';
 import 'package:flutter/material.dart';
+
+import '../common_ui/web/webview_page.dart';
 
 class Routes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -13,7 +15,11 @@ class Routes {
       case RoutePath.tab:
         return pageRoute(const TabPage(), settings: settings);
       case RoutePath.webViewPage:
-        return pageRoute(const WebViewPage(title: "首页跳转来的1"),
+        return pageRoute(
+            WebViewPage(
+              loadResource: "",
+              webViewType: WebViewType.URL,
+            ),
             settings: settings);
       case RoutePath.loginPage:
         return pageRoute(const LoginPage(), settings: settings);

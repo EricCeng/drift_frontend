@@ -8,6 +8,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
+import '../../../common_ui/web/webview_page.dart';
+import '../../../common_ui/web/webview_widget.dart';
+import '../../../route/route_utils.dart';
+
 class KnowledgeTabChildPage extends StatefulWidget {
   const KnowledgeTabChildPage({super.key, this.cid});
 
@@ -61,11 +65,23 @@ class _KnowledgeTabChildPageState extends State<KnowledgeTabChildPage> {
               child: ListView.builder(
                 itemCount: viewModel.detailList.length,
                 itemBuilder: (context, index) {
+                  var item = viewModel.detailList.isNotEmpty == true
+                      ? viewModel.detailList[index]
+                      : KnowledgeDetailItem();
                   return _item(
-                      viewModel.detailList.isNotEmpty == true
-                          ? viewModel.detailList[index]
-                          : KnowledgeDetailItem(),
-                      onTap: () {});
+                    item,
+                    onTap: () {
+                      RouteUtils.push(
+                        context,
+                        WebViewPage(
+                          loadResource: item.link ?? "",
+                          webViewType: WebViewType.URL,
+                          showTitle: true,
+                          title: item.title,
+                        ),
+                      );
+                    },
+                  );
                 },
               ),
             );

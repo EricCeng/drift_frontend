@@ -1,8 +1,9 @@
 import 'package:drift_frontend/common_ui/loading.dart';
 import 'package:drift_frontend/common_ui/smart_refresh/smart_refresh_widget.dart';
+import 'package:drift_frontend/common_ui/web/webview_page.dart';
+import 'package:drift_frontend/common_ui/web/webview_widget.dart';
 import 'package:drift_frontend/pages/home/home_vm.dart';
 import 'package:drift_frontend/route/route_utils.dart';
-import 'package:drift_frontend/route/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_swiper_view/flutter_swiper_view.dart';
@@ -102,14 +103,27 @@ class _HomePageState extends State<HomePage> {
           pagination: const SwiperPagination(),
           control: const SwiperControl(),
           itemBuilder: (context, index) {
-            return Container(
-              width: double.infinity,
-              // margin: EdgeInsets.all(15),
-              height: 150.h,
-              color: Colors.white24,
-              child: Image.network(
-                viewModel.bannerList?[index]?.imagePath ?? "",
-                fit: BoxFit.fill,
+            return GestureDetector(
+              onTap: () {
+                RouteUtils.push(
+                  context,
+                  WebViewPage(
+                    loadResource: viewModel.bannerList?[index]?.url ?? "",
+                    webViewType: WebViewType.URL,
+                    showTitle: true,
+                    title: viewModel.bannerList?[index]?.title,
+                  ),
+                );
+              },
+              child: Container(
+                width: double.infinity,
+                // margin: EdgeInsets.all(15),
+                height: 150.h,
+                color: Colors.white24,
+                child: Image.network(
+                  viewModel.bannerList?[index]?.imagePath ?? "",
+                  fit: BoxFit.fill,
+                ),
               ),
             );
           },
@@ -149,8 +163,15 @@ class _HomePageState extends State<HomePage> {
         // Navigator.pushNamed(context, RoutePath.webViewPage);
         // RouteUtils.push(context, WebViewPage(title: "首页跳转来的2"));
         // 静态路由传值
-        RouteUtils.pushForNamed(context, RoutePath.webViewPage,
-            arguments: {"name": "使用路由传值"});
+        RouteUtils.push(
+          context,
+          WebViewPage(
+            loadResource: item?.link ?? "",
+            webViewType: WebViewType.URL,
+            showTitle: true,
+            title: item?.title,
+          ),
+        );
         // 跳转页面
         // Navigator.push(context, MaterialPageRoute(builder: (context) {
         //   return WebViewPage(

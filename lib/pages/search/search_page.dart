@@ -9,6 +9,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
+import '../../common_ui/web/webview_page.dart';
+import '../../common_ui/web/webview_widget.dart';
+
 class SearchPage extends StatefulWidget {
   SearchPage({super.key, this.keyword});
 
@@ -93,10 +96,22 @@ class _SearchPageState extends State<SearchPage> {
                       itemCount: viewModel.searchList.length,
                       itemBuilder: (context, index) {
                         return _listItem(
-                            viewModel.searchList.isNotEmpty == true
-                                ? (viewModel.searchList[index].title)
-                                : "",
-                            () {});
+                          viewModel.searchList.isNotEmpty == true
+                              ? (viewModel.searchList[index].title)
+                              : "",
+                          () {
+                            RouteUtils.push(
+                              context,
+                              WebViewPage(
+                                loadResource:
+                                    viewModel.searchList[index].link ?? "",
+                                webViewType: WebViewType.URL,
+                                showTitle: true,
+                                title: viewModel.searchList[index].title,
+                              ),
+                            );
+                          },
+                        );
                       },
                     ),
                   );
