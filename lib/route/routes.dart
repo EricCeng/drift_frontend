@@ -1,5 +1,6 @@
 // 路由管理类
 import 'package:drift_frontend/common_ui/web/webview_widget.dart';
+import 'package:drift_frontend/pages/about/about_page.dart';
 import 'package:drift_frontend/pages/auth/login_page.dart';
 import 'package:drift_frontend/pages/auth/register_page.dart';
 import 'package:drift_frontend/pages/collects/colllects_page.dart';
@@ -32,6 +33,8 @@ class Routes {
         return pageRoute(SearchPage(), settings: settings);
       case RoutePath.collectPage:
         return pageRoute(const CollectsPage(), settings: settings);
+      case RoutePath.aboutPage:
+        return pageRoute(const AboutPage(), settings: settings);
     }
     return pageRoute(Scaffold(
       body: SafeArea(
@@ -79,4 +82,7 @@ class RoutePath {
 
   // 我的收藏页面
   static const String collectPage = "/collect_page";
+
+  // 关于我们页面
+  static const String aboutPage = "/about_page";
 }

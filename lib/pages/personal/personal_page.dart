@@ -1,3 +1,4 @@
+import 'package:drift_frontend/pages/about/about_page.dart';
 import 'package:drift_frontend/pages/auth/login_page.dart';
 import 'package:drift_frontend/pages/collects/colllects_page.dart';
 import 'package:drift_frontend/pages/personal/personal_vm.dart';
@@ -43,7 +44,9 @@ class _PersonalPage extends State<PersonalPage> {
               RouteUtils.push(context, const CollectsPage());
             }),
             _settingsItem("检查更新", () {}),
-            _settingsItem("关于我们", () {}),
+            _settingsItem("关于我们", () {
+              RouteUtils.push(context, const AboutPage());
+            }),
             Consumer<PersonViewModel>(builder: (context, viewModel, child) {
               if (viewModel.shouldLogin) {
                 return const SizedBox();
