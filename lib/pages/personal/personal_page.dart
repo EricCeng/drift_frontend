@@ -1,4 +1,5 @@
 import 'package:drift_frontend/pages/auth/login_page.dart';
+import 'package:drift_frontend/pages/collects/colllects_page.dart';
 import 'package:drift_frontend/pages/personal/personal_vm.dart';
 import 'package:drift_frontend/route/route_utils.dart';
 import 'package:flutter/material.dart';
@@ -35,10 +36,12 @@ class _PersonalPage extends State<PersonalPage> {
           children: [
             _header(() {
               if (viewModel.shouldLogin) {
-                RouteUtils.push(context, LoginPage());
+                RouteUtils.push(context, const LoginPage());
               }
             }),
-            _settingsItem("我的收藏", () {}),
+            _settingsItem("我的收藏", () {
+              RouteUtils.push(context, const CollectsPage());
+            }),
             _settingsItem("检查更新", () {}),
             _settingsItem("关于我们", () {}),
             Consumer<PersonViewModel>(builder: (context, viewModel, child) {
@@ -48,7 +51,7 @@ class _PersonalPage extends State<PersonalPage> {
               return _settingsItem("退出登录", () {
                 viewModel.logout((value) {
                   if (value == true) {
-                    RouteUtils.pushAndRemoveUntil(context, LoginPage());
+                    RouteUtils.pushAndRemoveUntil(context, const LoginPage());
                   }
                 });
               });

@@ -2,6 +2,7 @@
 import 'package:drift_frontend/common_ui/web/webview_widget.dart';
 import 'package:drift_frontend/pages/auth/login_page.dart';
 import 'package:drift_frontend/pages/auth/register_page.dart';
+import 'package:drift_frontend/pages/collects/colllects_page.dart';
 import 'package:drift_frontend/pages/knowledge/detail/knowledge_detail_tab_page.dart';
 import 'package:drift_frontend/pages/search/search_page.dart';
 import 'package:drift_frontend/pages/tab_page.dart';
@@ -29,6 +30,8 @@ class Routes {
         return pageRoute(const KnowledgeDetailTabPage(), settings: settings);
       case RoutePath.searchPage:
         return pageRoute(SearchPage(), settings: settings);
+      case RoutePath.collectPage:
+        return pageRoute(const CollectsPage(), settings: settings);
     }
     return pageRoute(Scaffold(
       body: SafeArea(
@@ -73,4 +76,7 @@ class RoutePath {
 
   // 搜索页面
   static const String searchPage = "/search_page";
+
+  // 我的收藏页面
+  static const String collectPage = "/collect_page";
 }

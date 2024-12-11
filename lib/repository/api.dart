@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:drift_frontend/repository/data/collects_list_data.dart';
 import 'package:drift_frontend/repository/data/common_website_data.dart';
 import 'package:drift_frontend/repository/data/knowledge_detail_list_data.dart';
 import 'package:drift_frontend/repository/data/knowledge_list_data.dart';
@@ -117,11 +118,27 @@ class Api {
   }
 
   // 搜索数据
-  Future<List<SearchListItemData>?> searchList(String? page, String? keyword) async {
-    Response response = await DioInstance.instance()
-        .post(path: "/article/query/$page/json", queryParameters: {"k": keyword});
+  Future<List<SearchListItemData>?> searchList(
+      String? page, String? keyword) async {
+    Response response = await DioInstance.instance().post(
+        path: "/article/query/$page/json", queryParameters: {"k": keyword});
     var searchListData = SearchListData.fromJson(response.data);
     return searchListData.datas;
+  }
+
+  // 我的收藏列表
+  Future<List<CollectItemData>?> collectList(String? page) async {
+    Response response =
+        await DioInstance.instance().get(path: "/lg/collect/list/$page/json");
+    var collectListData = CollectsListData.fromJson(response.data);
+    return collectListData.datas;
+  }
+
+  // 取消收藏
+  Future<bool?> unCollectFromMyCollect(String? id) async {
+    Response response = await DioInstance.instance()
+        .post(path: "/lg/uncollect_originId/$id/json");
+    return boolCallback(response.data);
   }
 
   bool? boolCallback(dynamic data) {
