@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:drift_frontend/repository/data/app_check_update_data.dart';
 import 'package:drift_frontend/repository/data/collects_list_data.dart';
 import 'package:drift_frontend/repository/data/common_website_data.dart';
 import 'package:drift_frontend/repository/data/knowledge_detail_list_data.dart';
@@ -139,6 +140,18 @@ class Api {
     Response response = await DioInstance.instance()
         .post(path: "/lg/uncollect_originId/$id/json");
     return boolCallback(response.data);
+  }
+
+  // 检查 app 新版本
+  Future<AppCheckUpdateData?> checkAppUpdate() async {
+    DioInstance.instance().changeBaseUrl("https://www.pgyer.com");
+    Response response = await DioInstance.instance()
+        .post(path: "/apiv2/app/check", queryParameters: {
+      "_api_key": "6144518b048b93253e3ec351165116a0",
+      "appKey": "8cf47ad6c31c49681150ad6cfc8dae83"
+    });
+    DioInstance.instance().changeBaseUrl("https://www.wanandroid.com");
+    return AppCheckUpdateData.fromJson(response.data);
   }
 
   bool? boolCallback(dynamic data) {

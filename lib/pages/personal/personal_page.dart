@@ -1,3 +1,4 @@
+import 'package:drift_frontend/common_ui/dialog/dialog_factory.dart';
 import 'package:drift_frontend/pages/about/about_page.dart';
 import 'package:drift_frontend/pages/auth/login_page.dart';
 import 'package:drift_frontend/pages/collects/colllects_page.dart';
@@ -5,6 +6,7 @@ import 'package:drift_frontend/pages/personal/personal_vm.dart';
 import 'package:drift_frontend/route/route_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:oktoast/oktoast.dart';
 import 'package:provider/provider.dart';
 
 class PersonalPage extends StatefulWidget {
@@ -43,7 +45,9 @@ class _PersonalPage extends State<PersonalPage> {
             _settingsItem("我的收藏", () {
               RouteUtils.push(context, const CollectsPage());
             }),
-            _settingsItem("检查更新", () {}),
+            _settingsItem("检查更新", () {
+              checkAppUpdate();
+            }),
             _settingsItem("关于我们", () {
               RouteUtils.push(context, const AboutPage());
             }),
@@ -128,5 +132,24 @@ class _PersonalPage extends State<PersonalPage> {
         ),
       ),
     );
+  }
+
+  void checkAppUpdate() {
+    viewModel.checkUpdate().then((url) {
+      if (url != null && url.isNotEmpty == true) {
+        DialogFactory.instance.showNeedUpdateDialog(
+          context: context,
+          dismissClick: () {
+            // 是否显示更新红点
+          },
+          confirmClick: () {
+            // 跳转到外部浏览器打开
+            viewModel.jumpToOutLink(url);
+          },
+        );
+      } else {
+        showToast("已是最新版本");
+      }
+    });
   }
 }
