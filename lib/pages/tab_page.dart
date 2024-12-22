@@ -6,6 +6,7 @@ import 'package:drift_frontend/pages/personal/personal_page.dart';
 import 'package:drift_frontend/pages/hot_key/hot_key_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class TabPage extends StatefulWidget {
   const TabPage({super.key});
@@ -37,20 +38,20 @@ class _TabPageState extends State<TabPage> {
       const MessagePage(),
       const PersonalPage()
     ];
-    labels = ["首页", "体系", "发现", "消息", "我"];
+    labels = ["首页", "热门", "", "消息", "我"];
     icons = [
-      const Icon(Icons.home_outlined),
-      const Icon(CupertinoIcons.book),
-      const Icon(CupertinoIcons.compass),
-      const Icon(CupertinoIcons.chat_bubble),
-      const Icon(CupertinoIcons.person)
+      const Icon(PhosphorIconsRegular.house, size: 30),
+      const Icon(PhosphorIconsRegular.fire, size: 30),
+      const Icon(PhosphorIconsFill.plusCircle, size: 45),
+      const Icon(PhosphorIconsFill.envelopeSimple, size: 30),
+      const Icon(PhosphorIconsRegular.ghost, size: 30)
     ];
     activeIcons = [
-      const Icon(Icons.home_rounded),
-      const Icon(CupertinoIcons.book_fill),
-      const Icon(CupertinoIcons.compass_fill),
-      const Icon(CupertinoIcons.chat_bubble_fill),
-      const Icon(CupertinoIcons.person_fill)
+      const Icon(PhosphorIconsFill.house, size: 32),
+      const Icon(PhosphorIconsFill.fire, size: 32),
+      const Icon(PhosphorIconsFill.plusCircle, size: 45),
+      const Icon(PhosphorIconsFill.envelopeSimpleOpen, size: 32),
+      const Icon(PhosphorIconsFill.ghost, size: 32)
     ];
   }
 

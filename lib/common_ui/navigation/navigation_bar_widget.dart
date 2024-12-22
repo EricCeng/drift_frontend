@@ -62,6 +62,8 @@ class _NavigationBarWidgetState extends State<NavigationBarWidget> {
               widget.onTabChange?.call(index);
               setState(() {});
             },
+            showSelectedLabels: false,
+            showUnselectedLabels: false,
             unselectedItemColor: Colors.grey,
             selectedItemColor: Colors.black54,
           )),

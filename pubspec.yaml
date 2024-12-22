@@ -65,6 +65,8 @@ dependencies:
   pull_to_refresh: ^2.0.0
   # webview：基于原生 webview 封装
   flutter_inappwebview: ^6.1.5
+  # phosphor icons
+  phosphor_flutter: ^2.1.0
 
 dev_dependencies:
   flutter_test:
