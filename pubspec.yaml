@@ -67,6 +67,8 @@ dependencies:
   flutter_inappwebview: ^6.1.5
   # phosphor icons
   phosphor_flutter: ^2.1.0
+  # 提取背景色
+  palette_generator: ^0.3.3+5
 
 dev_dependencies:
   flutter_test:

@@ -2,8 +2,10 @@ import 'package:drift_frontend/common_ui/navigation/navigation_bar_widget.dart';
 import 'package:drift_frontend/pages/home/home_page.dart';
 import 'package:drift_frontend/pages/knowledge/knowledge_page.dart';
 import 'package:drift_frontend/pages/message/message_page.dart';
+import 'package:drift_frontend/pages/personal/drift_personal_page.dart';
 import 'package:drift_frontend/pages/personal/personal_page.dart';
 import 'package:drift_frontend/pages/hot_key/hot_key_page.dart';
+import 'package:drift_frontend/popular/popular_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -33,10 +35,10 @@ class _TabPageState extends State<TabPage> {
   void initTabData() {
     pages = [
       const HomePage(),
-      const KnowledgePage(),
+      const PopularPage(),
       const HotKeyPage(),
       const MessagePage(),
-      const PersonalPage()
+      const DriftPersonalPage()
     ];
     labels = ["首页", "热门", "", "消息", "我"];
     icons = [
