@@ -1,6 +1,8 @@
 import 'dart:ui' as ui;
 
+import 'package:drift_frontend/common_ui/common_style.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:palette_generator/palette_generator.dart';
 
 class DriftPersonalPage extends StatefulWidget {
@@ -14,184 +16,255 @@ class DriftPersonalPage extends StatefulWidget {
 
 class _PersonalPageState extends State<DriftPersonalPage>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+  final ScrollController _scrollController = ScrollController();
+
+  // 滑动过程中 AppBar 背景透明度的动态变化
+  double _appBarBackgroundOpacity = 0.0;
+
+  // // 个人信息区域的高度
+  // final double _profileInfoHeight = 240.0;
+
+  // 从背景图中提取的主色
+  Color _backgroundImageMainColor = Colors.blue;
+
+  double _avatarOffset = 0; // 控制头像的 Y 轴位置
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _scrollController.addListener(_onScroll);
+    // _extractMainColor(); // 提取背景图的主色
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    // 根据滚动偏移来动态控制头像的偏移量
+    setState(() {
+      _avatarOffset = _scrollController.offset;
+      if (_avatarOffset < 0) _avatarOffset = 0; // 防止负值
+    });
+  }
+
+  // 从背景图中提取主色
+  Future<void> _extractMainColor() async {
+    final PaletteGenerator paletteGenerator =
+        await PaletteGenerator.fromImageProvider(
+      AssetImage('assets/images/default_background.jpg'), // 替换为你的背景图路径
+    );
+    setState(() {
+      _backgroundImageMainColor =
+          paletteGenerator.dominantColor?.color ?? Colors.blue;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          // 设置一个 bar，覆盖在 appBar 的顶部，其下层是背景图
-          SliverAppBar(
-            expandedHeight: 250.0,
-            floating: true,
-            pinned: true,
-            backgroundColor: Colors.black.withOpacity(0.3),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage(
-                            'assets/images/default_background2.jpg'), // 背景图
-                        fit: BoxFit.cover,
-                        colorFilter: ColorFilter.mode(
-                            Colors.black.withOpacity(0.3), BlendMode.multiply),
-                      ),
-                    ),
+      body: Stack(
+        children: [
+          CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 300.0,
+                pinned: true,
+                backgroundColor: Colors.deepPurple[200],
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Container(
+                    color: Colors.deepPurple[200],
                   ),
-                  Positioned(
-                    top: 16.0,
-                    left: 16.0,
-                    child: IconButton(
-                      icon: Icon(Icons.settings, color: Colors.white),
-                      onPressed: () {
-                        // TODO: 添加设置按钮的点击事件
-                      },
-                    ),
-                  ),
-                  Positioned(
-                    top: 16.0,
-                    right: 16.0,
-                    child: IconButton(
-                      icon: Icon(Icons.share, color: Colors.white),
-                      onPressed: () {
-                        // TODO: 添加分享按钮的点击事件
-                      },
-                    ),
-                  ),
-                  Positioned(
-                    top: 16.0, // 根据滚动位置更新头像位置
-                    left: 16.0, // 个人信息区域左侧的头像位置
-                    child: CircleAvatar(
-                      radius: 40,
-                      backgroundImage:
-                          AssetImage('assets/images/default_avatar.jpg'),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 16.0,
-                    left: 16.0,
-                    right: 16.0,
-                    child: Column(
-                      children: [
-                        Text('用户名',
-                            style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white)),
-                        Text('简介', style: TextStyle(color: Colors.white)),
-                        Text('地区: 地区信息', style: TextStyle(color: Colors.white)),
-                        Text('性别: 男', style: TextStyle(color: Colors.white)),
-                        SizedBox(height: 8.0),
-                        Divider(color: Colors.white),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              Column(children: [
-                                Text('关注数',
-                                    style: TextStyle(color: Colors.white)),
-                                Text('100',
-                                    style: TextStyle(color: Colors.white))
-                              ]),
-                              Column(children: [
-                                Text('粉丝数',
-                                    style: TextStyle(color: Colors.white)),
-                                Text('200',
-                                    style: TextStyle(color: Colors.white))
-                              ]),
-                              Column(children: [
-                                Text('获赞',
-                                    style: TextStyle(color: Colors.white)),
-                                Text('300',
-                                    style: TextStyle(color: Colors.white))
-                              ]),
-                              Column(children: [
-                                Text('收藏数',
-                                    style: TextStyle(color: Colors.white)),
-                                Text('400',
-                                    style: TextStyle(color: Colors.white))
-                              ]),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
+                leading: const Icon(
+                  Icons.menu,
+                  color: Colors.white,
+                ),
               ),
-            ),
-          ),
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _SliverAppBarDelegate(
-              TabBar(
-                controller: _tabController,
-                tabs: [
-                  Tab(text: '动态'),
-                  Tab(text: '收藏'),
-                  Tab(text: '点赞'),
-                ],
-                indicatorColor: Colors.blue,
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    return ListTile(
+                      title: Text('Item $index'),
+                    );
+                  },
+                  childCount: 50,
+                ),
               ),
-            ),
+            ],
           ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (BuildContext context, int index) {
-                // 根据选中的 Tab 显示相应内容
-                if (_tabController.index == 0) {
-                  return ListTile(title: Text('动态项目 $index'));
-                } else if (_tabController.index == 1) {
-                  return ListTile(title: Text('收藏项目 $index'));
-                } else {
-                  return ListTile(title: Text('点赞项目 $index'));
-                }
-              },
-              childCount: 30, // 假设有 30 个项目
+          // 动态显示的 logo
+          AnimatedPositioned(
+            duration: Duration(milliseconds: 500),
+            curve: Curves.easeIn,
+            top: _avatarOffset < 150 ? 150 - _avatarOffset : 10.h,
+            // 控制 logo 动画出现的时机
+            left: MediaQuery.of(context).size.width / 2 - 18.w,
+            // 居中显示 logo
+            child: AnimatedOpacity(
+              opacity: (_avatarOffset < 150 ? 0 : 1), // 控制 logo 的显示与隐藏
+              duration: Duration(milliseconds: 500),
+              child: CircleAvatar(
+                radius: 18, // logo 的大小
+                backgroundImage: AssetImage('assets/images/default_avatar.jpg'),
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 0.5.w,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ],
       ),
     );
   }
-}
 
-class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
-  final TabBar tabBar;
-
-  _SliverAppBarDelegate(this.tabBar);
-
-  @override
-  double get minExtent => tabBar.preferredSize.height;
-
-  @override
-  double get maxExtent => tabBar.preferredSize.height;
-
-  @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Material(
-      color: Colors.white,
-      child: tabBar,
+  // 构建固定的 AppBar
+  Widget _buildAppBar() {
+    return Container(
+      height: kToolbarHeight,
+      color: Colors.transparent,
+      child: AppBar(
+        leading: const Icon(
+          Icons.menu,
+          color: Colors.white60,
+        ),
+        backgroundColor: Colors.transparent, // 背景色设置为透明
+        elevation: 0,
+        title: Opacity(
+          opacity: _appBarBackgroundOpacity,
+          child: Text(
+            "User Name",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      ),
     );
   }
 
-  @override
-  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) => false;
+  // 构建个人信息区域
+  Widget _buildProfileInfo() {
+    return Column(
+      children: [
+        // 背景图和个人信息区域
+        Container(
+          height: 200.h,
+          child: Stack(
+            children: [
+              // 背景图
+              // Container(
+              //   decoration: BoxDecoration(
+              //     image: DecorationImage(
+              //       image: AssetImage('assets/images/default_background.jpg'),
+              //       // 替换为你的背景图路径
+              //       fit: BoxFit.cover,
+              //     ),
+              //   ),
+              // child: Container(
+              //   decoration: BoxDecoration(
+              //     gradient: LinearGradient(
+              //       begin: Alignment(0.0, 0.67),
+              //       end: Alignment.bottomCenter,
+              //       colors: [
+              //         _backgroundImageMainColor.withOpacity(0.0),
+              //         _backgroundImageMainColor.withOpacity(0.2),
+              //         _backgroundImageMainColor.withOpacity(0.4),
+              //         _backgroundImageMainColor.withOpacity(0.6),
+              //         _backgroundImageMainColor.withOpacity(0.8),
+              //         _backgroundImageMainColor,
+              //       ],
+              //       stops: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+              //     ),
+              //   ),
+              // ),
+              // ),
+              // 个人信息内容
+              Container(
+                // width: double.infinity,
+                color: Colors.deepPurple[200],
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundImage: AssetImage(
+                          'assets/images/default_avatar.jpg'), // 替换为你的头像路径
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      "User Name",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      "简介：Flutter 开发者 | 热爱生活",
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        // 统计信息部分
+        Container(
+          color: Colors.deepPurple[200],
+          padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildStatistic("关注", "120"),
+              SizedBox(width: 16),
+              _buildStatistic("粉丝", "1.5k"),
+              SizedBox(width: 16),
+              _buildStatistic("获赞与收藏", "3.2k"),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatistic(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white70,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
 }

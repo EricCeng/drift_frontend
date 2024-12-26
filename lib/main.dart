@@ -2,6 +2,7 @@ import 'package:drift_frontend/http/dio_instance.dart';
 import 'package:drift_frontend/route/route_utils.dart';
 import 'package:drift_frontend/route/routes.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:oktoast/oktoast.dart';
 
@@ -37,6 +38,7 @@ class MyApp extends StatelessWidget {
       designSize: designSize,
       builder: (context, child) {
         return MaterialApp(
+          debugShowCheckedModeBanner: false,
           title: "Flutter Demo",
           theme: ThemeData(
               //colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
