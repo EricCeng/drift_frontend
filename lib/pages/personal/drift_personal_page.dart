@@ -27,13 +27,13 @@ class _PersonalPageState extends State<DriftPersonalPage>
   // 从背景图中提取的主色
   Color _backgroundImageMainColor = Colors.blue;
 
-  double _avatarOffset = 0; // 控制头像的 Y 轴位置
+  double offset = 0; // 控制头像的 Y 轴位置
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    // _extractMainColor(); // 提取背景图的主色
+    _extractMainColor(); // 提取背景图的主色
   }
 
   @override
@@ -46,8 +46,15 @@ class _PersonalPageState extends State<DriftPersonalPage>
   void _onScroll() {
     // 根据滚动偏移来动态控制头像的偏移量
     setState(() {
-      _avatarOffset = _scrollController.offset;
-      if (_avatarOffset < 0) _avatarOffset = 0; // 防止负值
+      offset = _scrollController.offset;
+      // 防止负值
+      if (offset < 0) {
+        offset = 0;
+      }
+      double opacity = (offset / (90.0 - kToolbarHeight)).clamp(0.0, 1.0);
+      if (opacity != _appBarBackgroundOpacity) {
+        _appBarBackgroundOpacity = opacity;
+      }
     });
   }
 
@@ -71,43 +78,34 @@ class _PersonalPageState extends State<DriftPersonalPage>
           CustomScrollView(
             controller: _scrollController,
             slivers: [
-              SliverAppBar(
-                expandedHeight: 300.0,
-                pinned: true,
-                backgroundColor: Colors.deepPurple[200],
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Container(
-                    color: Colors.deepPurple[200],
-                  ),
-                ),
-                leading: const Icon(
-                  Icons.menu,
-                  color: Colors.white,
-                ),
+              SliverToBoxAdapter(
+                child: _buildProfileInfo(),
               ),
               SliverList(
                 delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    return ListTile(
-                      title: Text('Item $index'),
-                    );
-                  },
-                  childCount: 50,
+                  (context, index) => ListTile(
+                    leading: CircleAvatar(
+                      child: Text('$index'),
+                    ),
+                    title: Text('Item $index'),
+                  ),
+                  childCount: 20,
                 ),
               ),
             ],
           ),
+          _buildAppBar(),
           // 动态显示的 logo
           AnimatedPositioned(
-            duration: Duration(milliseconds: 500),
+            duration: Duration(milliseconds: 200),
             curve: Curves.easeIn,
-            top: _avatarOffset < 150 ? 150 - _avatarOffset : 10.h,
+            top: offset < 88 ? 88 - offset : 10.h,
             // 控制 logo 动画出现的时机
             left: MediaQuery.of(context).size.width / 2 - 18.w,
             // 居中显示 logo
             child: AnimatedOpacity(
-              opacity: (_avatarOffset < 150 ? 0 : 1), // 控制 logo 的显示与隐藏
-              duration: Duration(milliseconds: 500),
+              opacity: (offset < 88 ? 0 : 1), // 控制 logo 的显示与隐藏
+              duration: Duration(milliseconds: 200),
               child: CircleAvatar(
                 radius: 18, // logo 的大小
                 backgroundImage: AssetImage('assets/images/default_avatar.jpg'),
@@ -131,8 +129,10 @@ class _PersonalPageState extends State<DriftPersonalPage>
   // 构建固定的 AppBar
   Widget _buildAppBar() {
     return Container(
-      height: kToolbarHeight,
-      color: Colors.transparent,
+      height: 50.h,
+      decoration: BoxDecoration(
+        color: _backgroundImageMainColor.withOpacity(_appBarBackgroundOpacity),
+      ),
       child: AppBar(
         leading: const Icon(
           Icons.menu,
@@ -140,13 +140,6 @@ class _PersonalPageState extends State<DriftPersonalPage>
         ),
         backgroundColor: Colors.transparent, // 背景色设置为透明
         elevation: 0,
-        title: Opacity(
-          opacity: _appBarBackgroundOpacity,
-          child: Text(
-            "User Name",
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
       ),
     );
   }
@@ -157,41 +150,37 @@ class _PersonalPageState extends State<DriftPersonalPage>
       children: [
         // 背景图和个人信息区域
         Container(
-          height: 200.h,
+          height: 230.h,
           child: Stack(
             children: [
               // 背景图
-              // Container(
-              //   decoration: BoxDecoration(
-              //     image: DecorationImage(
-              //       image: AssetImage('assets/images/default_background.jpg'),
-              //       // 替换为你的背景图路径
-              //       fit: BoxFit.cover,
-              //     ),
-              //   ),
-              // child: Container(
-              //   decoration: BoxDecoration(
-              //     gradient: LinearGradient(
-              //       begin: Alignment(0.0, 0.67),
-              //       end: Alignment.bottomCenter,
-              //       colors: [
-              //         _backgroundImageMainColor.withOpacity(0.0),
-              //         _backgroundImageMainColor.withOpacity(0.2),
-              //         _backgroundImageMainColor.withOpacity(0.4),
-              //         _backgroundImageMainColor.withOpacity(0.6),
-              //         _backgroundImageMainColor.withOpacity(0.8),
-              //         _backgroundImageMainColor,
-              //       ],
-              //       stops: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
-              //     ),
-              //   ),
-              // ),
-              // ),
-              // 个人信息内容
               Container(
-                // width: double.infinity,
-                color: Colors.deepPurple[200],
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage('assets/images/default_background.jpg'),
+                    // 替换为你的背景图路径
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                // child: Container(
+                //   decoration: BoxDecoration(
+                //     gradient: LinearGradient(
+                //       begin: Alignment(0.0, 0.67),
+                //       end: Alignment.bottomCenter,
+                //       colors: [
+                //         _backgroundImageMainColor.withOpacity(0.0),
+                //         _backgroundImageMainColor.withOpacity(0.2),
+                //         _backgroundImageMainColor.withOpacity(0.4),
+                //         _backgroundImageMainColor.withOpacity(0.6),
+                //         _backgroundImageMainColor.withOpacity(0.8),
+                //         _backgroundImageMainColor,
+                //       ],
+                //       stops: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+                //     ),
+                //   ),
+                // ),
               ),
+              // 个人信息内容
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -210,6 +199,14 @@ class _PersonalPageState extends State<DriftPersonalPage>
                         color: Colors.white,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      "简介：Flutter 开发者 | 热爱生活",
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
                       ),
                     ),
                     SizedBox(height: 4),
