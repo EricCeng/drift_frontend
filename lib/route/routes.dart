@@ -1,11 +1,6 @@
 // 路由管理类
 import 'package:drift_frontend/common_ui/web/webview_widget.dart';
 import 'package:drift_frontend/pages/about/about_page.dart';
-import 'package:drift_frontend/pages/auth/login_page.dart';
-import 'package:drift_frontend/pages/auth/register_page.dart';
-import 'package:drift_frontend/pages/collects/colllects_page.dart';
-import 'package:drift_frontend/pages/knowledge/detail/knowledge_detail_tab_page.dart';
-import 'package:drift_frontend/pages/search/search_page.dart';
 import 'package:drift_frontend/pages/tab_page.dart';
 import 'package:flutter/material.dart';
 
@@ -23,16 +18,16 @@ class Routes {
               webViewType: WebViewType.URL,
             ),
             settings: settings);
-      case RoutePath.loginPage:
-        return pageRoute(const LoginPage(), settings: settings);
-      case RoutePath.registerPage:
-        return pageRoute(const RegisterPage(), settings: settings);
-      case RoutePath.knowledgeDetailPage:
-        return pageRoute(const KnowledgeDetailTabPage(), settings: settings);
-      case RoutePath.searchPage:
-        return pageRoute(SearchPage(), settings: settings);
-      case RoutePath.collectPage:
-        return pageRoute(const CollectsPage(), settings: settings);
+      // case RoutePath.loginPage:
+      //   return pageRoute(const LoginPage(), settings: settings);
+      // case RoutePath.registerPage:
+      //   return pageRoute(const RegisterPage(), settings: settings);
+      // case RoutePath.knowledgeDetailPage:
+      //   return pageRoute(const KnowledgeDetailTabPage(), settings: settings);
+      // case RoutePath.searchPage:
+      //   return pageRoute(SearchPage(), settings: settings);
+      // case RoutePath.collectPage:
+      //   return pageRoute(const CollectsPage(), settings: settings);
       case RoutePath.aboutPage:
         return pageRoute(const AboutPage(), settings: settings);
     }

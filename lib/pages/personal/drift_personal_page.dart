@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:drift_frontend/common_ui/common_style.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:palette_generator/palette_generator.dart';
 
@@ -28,6 +29,11 @@ class _PersonalPageState extends State<DriftPersonalPage>
   Color _backgroundImageMainColor = Colors.blue;
 
   double offset = 0; // 控制头像的 Y 轴位置
+
+  // 用来获取文本区域的高度
+  GlobalKey _textKey = GlobalKey();
+
+  double _textHeight = 0;
 
   @override
   void initState() {
@@ -99,12 +105,12 @@ class _PersonalPageState extends State<DriftPersonalPage>
           AnimatedPositioned(
             duration: Duration(milliseconds: 200),
             curve: Curves.easeIn,
-            top: offset < 88 ? 88 - offset : 10.h,
+            top: offset < 74 ? 74 - offset : 10.h,
             // 控制 logo 动画出现的时机
             left: MediaQuery.of(context).size.width / 2 - 18.w,
             // 居中显示 logo
             child: AnimatedOpacity(
-              opacity: (offset < 88 ? 0 : 1), // 控制 logo 的显示与隐藏
+              opacity: (offset < 74 ? 0 : 1), // 控制 logo 的显示与隐藏
               duration: Duration(milliseconds: 200),
               child: CircleAvatar(
                 radius: 18, // logo 的大小
@@ -150,74 +156,94 @@ class _PersonalPageState extends State<DriftPersonalPage>
       children: [
         // 背景图和个人信息区域
         Container(
-          height: 230.h,
+          width: double.infinity,
           child: Stack(
             children: [
               // 背景图
               Container(
+                height: 160.h + _textHeight,
                 decoration: BoxDecoration(
                   image: DecorationImage(
                     image: AssetImage('assets/images/default_background.jpg'),
-                    // 替换为你的背景图路径
                     fit: BoxFit.cover,
+                    colorFilter: ColorFilter.mode(
+                      Colors.black.withOpacity(0.3),
+                      BlendMode.darken,
+                    ),
                   ),
                 ),
-                // child: Container(
-                //   decoration: BoxDecoration(
-                //     gradient: LinearGradient(
-                //       begin: Alignment(0.0, 0.67),
-                //       end: Alignment.bottomCenter,
-                //       colors: [
-                //         _backgroundImageMainColor.withOpacity(0.0),
-                //         _backgroundImageMainColor.withOpacity(0.2),
-                //         _backgroundImageMainColor.withOpacity(0.4),
-                //         _backgroundImageMainColor.withOpacity(0.6),
-                //         _backgroundImageMainColor.withOpacity(0.8),
-                //         _backgroundImageMainColor,
-                //       ],
-                //       stops: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
-                //     ),
-                //   ),
-                // ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment(0.0, 0.67),
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        _backgroundImageMainColor.withOpacity(0.0),
+                        _backgroundImageMainColor.withOpacity(0.2),
+                        _backgroundImageMainColor.withOpacity(0.4),
+                        _backgroundImageMainColor.withOpacity(0.6),
+                        _backgroundImageMainColor.withOpacity(0.8),
+                        _backgroundImageMainColor,
+                      ],
+                      stops: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+                    ),
+                  ),
+                ),
               ),
               // 个人信息内容
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundImage: AssetImage(
-                          'assets/images/default_avatar.jpg'), // 替换为你的头像路径
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      "User Name",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+              Positioned(
+                top: 50.h,
+                left: 20.w,
+                child: Container(
+                  width: 200.w,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        // crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CircleAvatar(
+                            radius: 35.r,
+                            backgroundImage:
+                                AssetImage('assets/images/default_avatar.jpg'),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 0.5.w,
+                                  )),
+                            ),
+                          ),
+                          SizedBox(width: 16.w),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "ttudsii", // 用户名
+                                style: TextStyle(
+                                    fontSize: 18.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white),
+                              ),
+                              SizedBox(height: 6.h),
+                              Text(
+                                "ID: 123456789",
+                                style: TextStyle(
+                                  fontSize: 10.sp,
+                                  color: Colors.white,
+                                ),
+                              )
+                            ],
+                          )
+                        ],
                       ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      "简介：Flutter 开发者 | 热爱生活",
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
+                      SizedBox(height: 10.h),
+                      _buildDynamicText(
+                        "Fear or love, dont't say the answer.\nActions speak louder than words.",
                       ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      "简介：Flutter 开发者 | 热爱生活",
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -239,6 +265,40 @@ class _PersonalPageState extends State<DriftPersonalPage>
           ),
         ),
       ],
+    );
+  }
+
+  // 限制最大字符数为 100，超过则显示 ...
+  Widget _buildDynamicText(String text) {
+    // 限制文本的最大字符数为 100
+    String truncatedText = text.length > 100 ? text.substring(0, 100) : text;
+
+    // 设置文本样式，宽度为 200px，自动换行
+    TextStyle textStyle = TextStyle(
+      fontSize: 11.sp,
+      // fontWeight: FontWeight.w500,
+      color: Colors.white,
+    );
+
+    // 通过 GlobalKey 获取文本区域的高度
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final RenderBox renderBox =
+          _textKey.currentContext!.findRenderObject() as RenderBox;
+      final height = renderBox.size.height;
+      setState(() {
+        _textHeight = height;
+      });
+    });
+
+    return Container(
+      key: _textKey,
+      width: 200.w, // 宽度限制
+      child: Text(
+        truncatedText,
+        style: textStyle,
+        maxLines: null, // 不限制行数
+        // overflow: TextOverflow.ellipsis, // 超过的部分显示为省略号
+      ),
     );
   }
 

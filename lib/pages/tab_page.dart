@@ -1,4 +1,5 @@
 import 'package:drift_frontend/common_ui/navigation/navigation_bar_widget.dart';
+import 'package:drift_frontend/pages/home/drfit_home_page.dart';
 import 'package:drift_frontend/pages/home/home_page.dart';
 import 'package:drift_frontend/pages/knowledge/knowledge_page.dart';
 import 'package:drift_frontend/pages/message/message_page.dart';
@@ -34,10 +35,10 @@ class _TabPageState extends State<TabPage> {
 
   void initTabData() {
     pages = [
-      const HomePage(),
-      const PopularPage(),
-      const HotKeyPage(),
-      const MessagePage(),
+      const DriftHomePage(),
+      const DriftHomePage(),
+      const DriftHomePage(),
+      const DriftHomePage(),
       const DriftPersonalPage()
     ];
     labels = ["首页", "热门", "", "消息", "我"];
