@@ -67,7 +67,7 @@ class _PersonalPageState extends State<DriftPersonalPage>
   // 从背景图中提取主色
   Future<void> _extractMainColor() async {
     final PaletteGenerator paletteGenerator =
-    await PaletteGenerator.fromImageProvider(
+        await PaletteGenerator.fromImageProvider(
       AssetImage('assets/images/default_background.jpg'), // 替换为你的背景图路径
     );
     setState(() {
@@ -78,59 +78,73 @@ class _PersonalPageState extends State<DriftPersonalPage>
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3, // TabBar 的标签数量
-      child: Scaffold(
-        body: Stack(
-          children: [
-            CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                // 个人信息区域
-                SliverToBoxAdapter(
-                  child: _buildProfileInfo(),
-                ),
-                // Tab Area 区域
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _TabAreaDelegate(
-                    tabBar: _buildTabBar(),
+    return Scaffold(
+      body: Stack(
+        children: [
+          NestedScrollView(
+            controller: _scrollController,
+            headerSliverBuilder: (context, innerBoxIsScrolled) {
+              return [
+                SliverToBoxAdapter(child: _buildProfileInfo()), // 个人信息
+                // SliverPersistentHeader(
+                //   pinned: true,
+                //   floating: false,
+                //   delegate: _TabBarDelegate(
+                //     tabController: _tabController,
+                //     scrollOffset: offset,
+                //     textHeight: _textHeight,
+                //   ),
+                // ),
+              ];
+            },
+            body: Column(
+              children: [
+                // 正常滑动的 TabBar
+                if (offset < 300.h + _textHeight - kToolbarHeight)
+                  _buildTabBar(),
+                // 当滚动到指定位置后固定的 TabBar
+                if (offset >= 300.h + _textHeight - kToolbarHeight)
+                  _buildFixedTabBar(),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildDynamicList(),
+                      _buildDynamicList(),
+                      _buildDynamicList(),
+                    ],
                   ),
-                ),
-                // Tab 内容
-                SliverToBoxAdapter(
-                  child: _buildTabContent(),
                 ),
               ],
             ),
-            // AppBar
-            _buildAppBar(),
-            // 动态显示的 logo
-            AnimatedPositioned(
+          ),
+          // AppBar
+          _buildAppBar(),
+          // 动态显示的 logo
+          AnimatedPositioned(
+            duration: Duration(milliseconds: 200),
+            curve: Curves.easeIn,
+            top: offset < 107 ? 107 - offset : 10.h,
+            left: MediaQuery.of(context).size.width / 2 - 18.w,
+            child: AnimatedOpacity(
+              opacity: (offset < 107 ? 0 : 1),
               duration: Duration(milliseconds: 200),
-              curve: Curves.easeIn,
-              top: offset < 107 ? 107 - offset : 10.h,
-              left: MediaQuery.of(context).size.width / 2 - 18.w,
-              child: AnimatedOpacity(
-                opacity: (offset < 107 ? 0 : 1),
-                duration: Duration(milliseconds: 200),
-                child: CircleAvatar(
-                  radius: 18,
-                  backgroundImage: AssetImage('assets/images/default_avatar.jpg'),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 0.5.w,
-                      ),
+              child: CircleAvatar(
+                radius: 18,
+                backgroundImage: AssetImage('assets/images/default_avatar.jpg'),
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 0.5.w,
                     ),
                   ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -209,7 +223,7 @@ class _PersonalPageState extends State<DriftPersonalPage>
                           CircleAvatar(
                             radius: 45.r,
                             backgroundImage:
-                            AssetImage('assets/images/default_avatar.jpg'),
+                                AssetImage('assets/images/default_avatar.jpg'),
                             child: Container(
                               decoration: BoxDecoration(
                                   shape: BoxShape.circle,
@@ -405,7 +419,7 @@ class _PersonalPageState extends State<DriftPersonalPage>
     // 通过 GlobalKey 获取文本区域的高度
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final RenderBox renderBox =
-      _textKey.currentContext!.findRenderObject() as RenderBox;
+          _textKey.currentContext!.findRenderObject() as RenderBox;
       final height = renderBox.size.height;
       setState(() {
         _textHeight = height;
@@ -424,72 +438,108 @@ class _PersonalPageState extends State<DriftPersonalPage>
     );
   }
 
+  // TabBar 区域
   Widget _buildTabBar() {
-    return Row(
-      children: [
-        Expanded(
-          child: TabBar(
-            controller: _tabController,
-            indicatorColor: Colors.blue,
-            labelColor: Colors.blue,
-            unselectedLabelColor: Colors.grey,
-            tabs: [
-              Tab(text: "动态"),
-              Tab(text: "收藏"),
-              Tab(text: "点赞"),
-            ],
-          ),
-        ),
-        IconButton(
-          icon: Icon(Icons.search),
-          onPressed: () {
-            // 搜索按钮点击事件
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTabContent() {
-    return SizedBox(
-      height: MediaQuery.of(context).size.height - 200, // 填充剩余高度
-      child: TabBarView(
-        controller: _tabController,
+    return Container(
+      color: Colors.white,
+      child: Row(
         children: [
-          _buildGridContent("动态"),
-          _buildGridContent("收藏"),
-          _buildGridContent("点赞"),
+          Expanded(
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: false,
+              indicatorColor: Colors.purple,
+              labelColor: Colors.black,
+              unselectedLabelColor: Colors.grey,
+              tabs: [
+                Tab(text: '动态${offset}'),
+                Tab(text: '收藏${300.h + _textHeight - kToolbarHeight}'),
+                Tab(text: '点赞${_textHeight}'),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.search),
+            onPressed: () {
+              // 搜索按钮的点击事件
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildGridContent(String tabName) {
-    return MasonryGridView.count(
-      crossAxisCount: 2,
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 8,
-      itemCount: 20,
-      itemBuilder: (context, index) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  height: 100 + (index % 3) * 20.0,
-                  color: Colors.blueAccent,
-                ),
-                SizedBox(height: 8),
-                Text('$tabName 内容 $index',
-                    style: TextStyle(fontSize: 14, color: Colors.black)),
+  // 固定的 TabBar
+  Widget _buildFixedTabBar() {
+    return Container(
+      padding: EdgeInsets.only(top: 56.h),
+      color: Colors.white,
+      child: Row(
+        children: [
+          Expanded(
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: false,
+              indicatorColor: Colors.purple,
+              labelColor: Colors.black,
+              unselectedLabelColor: Colors.grey,
+              tabs: [
+                Tab(text: '动态11${offset}'),
+                Tab(text: '收藏11${300.h + _textHeight - kToolbarHeight}'),
+                Tab(text: '点赞'),
               ],
             ),
+          ),
+          IconButton(
+            icon: Icon(Icons.search),
+            onPressed: () {
+              // 搜索按钮的点击事件
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 动态内容
+  Widget _buildDynamicList() {
+    return GridView.builder(
+      padding: EdgeInsets.all(8.w),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 8.w,
+        mainAxisSpacing: 8.h,
+        childAspectRatio: 0.8,
+      ),
+      itemCount: 20, // 示例项数量
+      itemBuilder: (context, index) {
+        return Card(
+          elevation: 2,
+          child: Column(
+            children: [
+              Expanded(
+                child: Container(
+                  color: Colors.grey[300],
+                  child: Image.asset(
+                    'assets/images/default_avatar.jpg',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: CircleAvatar(
+                  backgroundImage:
+                      AssetImage('assets/images/default_avatar.jpg'),
+                ),
+                title: Text('用户名称'),
+                trailing: IconButton(
+                  icon: Icon(Icons.favorite_border),
+                  onPressed: () {
+                    // 点赞按钮点击事件
+                  },
+                ),
+              ),
+            ],
           ),
         );
       },
@@ -497,40 +547,63 @@ class _PersonalPageState extends State<DriftPersonalPage>
   }
 }
 
-// 自定义 SliverPersistentHeaderDelegate
-class _TabAreaDelegate extends SliverPersistentHeaderDelegate {
-  final Widget tabBar;
+class _TabBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabController tabController;
+  final double scrollOffset;
+  final double textHeight;
 
-  _TabAreaDelegate({required this.tabBar});
+  _TabBarDelegate({
+    required this.tabController,
+    required this.scrollOffset,
+    required this.textHeight,
+  });
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    // 确保 TabBar 的固定位置
+    double topOffset = scrollOffset < (300.h + textHeight - kToolbarHeight)
+        ? scrollOffset
+        : (kToolbarHeight); // 固定位置在 AppBar 下方
+
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 4,
-            offset: Offset(0, 2),
+      color: Colors.white,
+      padding: EdgeInsets.only(top: topOffset),  // 控制 TabBar 在合适位置
+      child: Row(
+        children: [
+          Expanded(
+            child: TabBar(
+              controller: tabController,
+              isScrollable: false,
+              indicatorColor: Colors.purple,
+              labelColor: Colors.black,
+              unselectedLabelColor: Colors.grey,
+              tabs: [
+                Tab(text: '动态${topOffset}'),
+                Tab(text: '收藏'),
+                Tab(text: '点赞'),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.search),
+            onPressed: () {
+              // 搜索按钮的点击事件
+            },
           ),
         ],
       ),
-      child: tabBar,
     );
   }
 
   @override
-  double get maxExtent => 60.0;
+  double get maxExtent => 40.0.h; // 设置最大扩展高度
 
   @override
-  double get minExtent => 60.0;
+  double get minExtent => 40.0.h; // 设置最小扩展高度
 
   @override
   bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
-    return false;
+    return true;
   }
 }
