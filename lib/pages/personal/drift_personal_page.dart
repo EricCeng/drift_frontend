@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:palette_generator/palette_generator.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class DriftPersonalPage extends StatefulWidget {
   const DriftPersonalPage({super.key});
@@ -102,9 +103,6 @@ class _PersonalPageState extends State<DriftPersonalPage>
                 // 正常滑动的 TabBar
                 if (offset < 300.h + _textHeight - kToolbarHeight)
                   _buildTabBar(),
-                // 当滚动到指定位置后固定的 TabBar
-                if (offset >= 300.h + _textHeight - kToolbarHeight)
-                  _buildFixedTabBar(),
                 Expanded(
                   child: TabBarView(
                     controller: _tabController,
@@ -120,6 +118,14 @@ class _PersonalPageState extends State<DriftPersonalPage>
           ),
           // AppBar
           _buildAppBar(),
+          // 当滚动到指定位置后固定的 TabBar
+          if (offset >= 300.h + _textHeight - kToolbarHeight)
+            Positioned(
+              top: kToolbarHeight,
+              left: 0,
+              right: 0,
+              child: _buildTabBar(),
+            ),
           // 动态显示的 logo
           AnimatedPositioned(
             duration: Duration(milliseconds: 200),
@@ -443,26 +449,32 @@ class _PersonalPageState extends State<DriftPersonalPage>
     return Container(
       color: Colors.white,
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(
-            child: TabBar(
-              controller: _tabController,
-              isScrollable: false,
-              indicatorColor: Colors.purple,
-              labelColor: Colors.black,
-              unselectedLabelColor: Colors.grey,
-              tabs: [
-                Tab(text: '动态${offset}'),
-                Tab(text: '收藏${300.h + _textHeight - kToolbarHeight}'),
-                Tab(text: '点赞${_textHeight}'),
-              ],
-            ),
+          TabBar(
+            controller: _tabController,
+            isScrollable: true,
+            indicatorColor: Colors.deepPurple[200],
+            dividerColor: Colors.transparent,
+            labelColor: Colors.black87,
+            labelStyle: TextStyle(fontSize: 16.sp),
+            unselectedLabelColor: Colors.grey,
+            tabAlignment: TabAlignment.start,
+            tabs: [
+              Tab(text: '动态'),
+              Tab(text: '收藏'),
+              Tab(text: '赞过'),
+            ],
           ),
-          IconButton(
-            icon: Icon(Icons.search),
-            onPressed: () {
-              // 搜索按钮的点击事件
-            },
+          Padding(
+            padding: EdgeInsets.only(right: 8.w),
+            child: IconButton(
+              icon: Icon(PhosphorIconsRegular.magnifyingGlass),
+              color: Colors.grey,
+              onPressed: () {
+                // 搜索按钮的点击事件
+              },
+            ),
           ),
         ],
       ),
@@ -472,7 +484,7 @@ class _PersonalPageState extends State<DriftPersonalPage>
   // 固定的 TabBar
   Widget _buildFixedTabBar() {
     return Container(
-      padding: EdgeInsets.only(top: 56.h),
+      // padding: EdgeInsets.only(top: 56.h),
       color: Colors.white,
       child: Row(
         children: [
@@ -484,8 +496,8 @@ class _PersonalPageState extends State<DriftPersonalPage>
               labelColor: Colors.black,
               unselectedLabelColor: Colors.grey,
               tabs: [
-                Tab(text: '动态11${offset}'),
-                Tab(text: '收藏11${300.h + _textHeight - kToolbarHeight}'),
+                Tab(text: '动态'),
+                Tab(text: '收藏'),
                 Tab(text: '点赞'),
               ],
             ),
@@ -568,7 +580,7 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
 
     return Container(
       color: Colors.white,
-      padding: EdgeInsets.only(top: topOffset),  // 控制 TabBar 在合适位置
+      padding: EdgeInsets.only(top: topOffset), // 控制 TabBar 在合适位置
       child: Row(
         children: [
           Expanded(
