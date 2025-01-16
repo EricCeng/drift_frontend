@@ -1,4 +1,9 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:drift_frontend/cache/ImageRatioCache.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:palette_generator/palette_generator.dart';
@@ -34,12 +39,19 @@ class _PersonalPageState extends State<DriftPersonalPage>
 
   double _textHeight = 0;
 
+  // 保存筛选的本地图片路径
+  List<String> imagePaths = [];
+
+  // 保存每张图片的宽高比
+  List<double?> imageRatios = [];
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
     _tabController = TabController(length: 3, vsync: this);
-    _extractMainColor(); // 提取背景图的主色
+    _extractMainColor();
+    _loadAssets();
   }
 
   @override
@@ -77,6 +89,34 @@ class _PersonalPageState extends State<DriftPersonalPage>
     });
   }
 
+  // 加载既定的动态图片及计算图片宽高比
+  Future<void> _loadAssets() async {
+    // 获取 AssetManifest 中的所有资源路径
+    final manifestContent = await rootBundle.loadString('AssetManifest.json');
+    final Map<String, dynamic> manifestMap = json.decode(manifestContent);
+
+    // 筛选以 post_image 开头的 jpg 文件
+    final filteredPaths = manifestMap.keys
+        .where((path) =>
+            path.startsWith('assets/images/post_image') &&
+            path.endsWith('.jpg'))
+        .toList();
+
+    // 初始化宽高比列表
+    setState(() {
+      imagePaths = filteredPaths;
+      imageRatios = List.filled(filteredPaths.length, null);
+    });
+
+    // 计算每张图片的宽高比
+    for (int i = 0; i < filteredPaths.length; i++) {
+      final ratio = await ImageRatioCache.get(filteredPaths[i]);
+      setState(() {
+        imageRatios[i] = ratio;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,16 +126,8 @@ class _PersonalPageState extends State<DriftPersonalPage>
             controller: _scrollController,
             headerSliverBuilder: (context, innerBoxIsScrolled) {
               return [
-                SliverToBoxAdapter(child: _buildProfileInfo()), // 个人信息
-                // SliverPersistentHeader(
-                //   pinned: true,
-                //   floating: false,
-                //   delegate: _TabBarDelegate(
-                //     tabController: _tabController,
-                //     scrollOffset: offset,
-                //     textHeight: _textHeight,
-                //   ),
-                // ),
+                // 个人信息
+                SliverToBoxAdapter(child: _buildProfileInfo()),
               ];
             },
             body: Column(
@@ -282,8 +314,8 @@ class _PersonalPageState extends State<DriftPersonalPage>
                               child: Row(
                                 children: [
                                   Icon(
-                                    Icons.male,
-                                    color: Colors.lightBlueAccent,
+                                    PhosphorIconsRegular.genderMale,
+                                    color: Colors.blue[300],
                                     size: 12.r,
                                   ),
                                   SizedBox(width: 2.w),
@@ -446,176 +478,152 @@ class _PersonalPageState extends State<DriftPersonalPage>
 
   // TabBar 区域
   Widget _buildTabBar() {
+    // TODO 有白线
     return Container(
-      color: Colors.white,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            indicatorColor: Colors.deepPurple[200],
-            dividerColor: Colors.transparent,
-            labelColor: Colors.black87,
-            labelStyle: TextStyle(fontSize: 16.sp),
-            unselectedLabelColor: Colors.grey,
-            tabAlignment: TabAlignment.start,
-            tabs: [
-              Tab(text: '动态'),
-              Tab(text: '收藏'),
-              Tab(text: '赞过'),
+      color: _backgroundImageMainColor,
+      child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(12.r),
+              topRight: Radius.circular(12.r),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                indicatorColor: Colors.deepPurple[200],
+                dividerColor: Colors.transparent,
+                labelColor: Colors.black87,
+                labelStyle: TextStyle(fontSize: 16.sp),
+                unselectedLabelColor: Colors.grey,
+                tabAlignment: TabAlignment.start,
+                tabs: [
+                  Tab(text: '动态'),
+                  Tab(text: '收藏'),
+                  Tab(text: '赞过'),
+                ],
+              ),
+              Padding(
+                padding: EdgeInsets.only(right: 8.w),
+                child: IconButton(
+                  icon: Icon(PhosphorIconsRegular.magnifyingGlass),
+                  color: Colors.grey,
+                  onPressed: () {
+                    // 搜索按钮的点击事件
+                  },
+                ),
+              ),
             ],
-          ),
-          Padding(
-            padding: EdgeInsets.only(right: 8.w),
-            child: IconButton(
-              icon: Icon(PhosphorIconsRegular.magnifyingGlass),
-              color: Colors.grey,
-              onPressed: () {
-                // 搜索按钮的点击事件
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // 固定的 TabBar
-  Widget _buildFixedTabBar() {
-    return Container(
-      // padding: EdgeInsets.only(top: 56.h),
-      color: Colors.white,
-      child: Row(
-        children: [
-          Expanded(
-            child: TabBar(
-              controller: _tabController,
-              isScrollable: false,
-              indicatorColor: Colors.purple,
-              labelColor: Colors.black,
-              unselectedLabelColor: Colors.grey,
-              tabs: [
-                Tab(text: '动态'),
-                Tab(text: '收藏'),
-                Tab(text: '点赞'),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: Icon(Icons.search),
-            onPressed: () {
-              // 搜索按钮的点击事件
-            },
-          ),
-        ],
-      ),
+          )),
     );
   }
 
   // 动态内容
   Widget _buildDynamicList() {
-    return GridView.builder(
-      padding: EdgeInsets.all(8.w),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 8.w,
-        mainAxisSpacing: 8.h,
-        childAspectRatio: 0.8,
+    return Container(
+      color: Colors.grey[100],
+      child: MasonryGridView.builder(
+        padding: EdgeInsets.all(5.w),
+        gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2, // 两列
+        ),
+        mainAxisSpacing: 5.w,
+        // 列间距
+        crossAxisSpacing: 5.w,
+        // 行间距
+        itemCount: imagePaths.length,
+        itemBuilder: (context, index) {
+          return GestureDetector(
+            onTap: () {
+              // 点击事件
+            },
+            child: _buildItem(index),
+          );
+        },
       ),
-      itemCount: 20, // 示例项数量
-      itemBuilder: (context, index) {
-        return Card(
-          elevation: 2,
-          child: Column(
-            children: [
-              Expanded(
-                child: Container(
-                  color: Colors.grey[300],
-                  child: Image.asset(
-                    'assets/images/default_avatar.jpg',
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              ListTile(
-                leading: CircleAvatar(
-                  backgroundImage:
-                      AssetImage('assets/images/default_avatar.jpg'),
-                ),
-                title: Text('用户名称'),
-                trailing: IconButton(
-                  icon: Icon(Icons.favorite_border),
-                  onPressed: () {
-                    // 点赞按钮点击事件
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
-}
 
-class _TabBarDelegate extends SliverPersistentHeaderDelegate {
-  final TabController tabController;
-  final double scrollOffset;
-  final double textHeight;
-
-  _TabBarDelegate({
-    required this.tabController,
-    required this.scrollOffset,
-    required this.textHeight,
-  });
-
-  @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    // 确保 TabBar 的固定位置
-    double topOffset = scrollOffset < (300.h + textHeight - kToolbarHeight)
-        ? scrollOffset
-        : (kToolbarHeight); // 固定位置在 AppBar 下方
-
+  Widget _buildItem(int index) {
+    final aspectRatio = imageRatios[index];
+    final width = MediaQuery.of(context).size.width / 2 - 5.w;
+    // 如果宽高比尚未计算完成，展示加载占位符
+    if (aspectRatio == null) {
+      return Container(
+        width: width,
+        height: width,
+        alignment: Alignment.center,
+        child: CircularProgressIndicator(),
+      );
+    }
     return Container(
-      color: Colors.white,
-      padding: EdgeInsets.only(top: topOffset), // 控制 TabBar 在合适位置
-      child: Row(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(3.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: TabBar(
-              controller: tabController,
-              isScrollable: false,
-              indicatorColor: Colors.purple,
-              labelColor: Colors.black,
-              unselectedLabelColor: Colors.grey,
-              tabs: [
-                Tab(text: '动态${topOffset}'),
-                Tab(text: '收藏'),
-                Tab(text: '点赞'),
-              ],
+          Container(
+            width: width,
+            height: width / aspectRatio,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(3.r),
+                topRight: Radius.circular(3.r),
+              ),
+              image: DecorationImage(
+                image: AssetImage(imagePaths[index]),
+                fit: BoxFit.cover,
+              ),
             ),
           ),
-          IconButton(
-            icon: Icon(Icons.search),
-            onPressed: () {
-              // 搜索按钮的点击事件
-            },
+          Padding(
+            padding: EdgeInsets.all(10.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '标题标题',
+                  textAlign: TextAlign.start,
+                  style: TextStyle(fontSize: 15.sp),
+                ),
+                SizedBox(height: 10.h),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    CircleAvatar(
+                      backgroundImage:
+                          AssetImage('assets/images/default_avatar.jpg'),
+                      radius: 10.r,
+                    ),
+                    SizedBox(width: 6.w),
+                    Text(
+                      'ttudsii',
+                      style: TextStyle(fontSize: 12.sp, color: Colors.black54),
+                    ),
+                    Spacer(),
+                    Icon(
+                      PhosphorIconsRegular.heart,
+                      size: 18.sp,
+                      color: Colors.black45,
+                    ),
+                    SizedBox(width: 3.w),
+                    Text(
+                      '999',
+                      style: TextStyle(fontSize: 12.sp, color: Colors.black54),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
-  }
-
-  @override
-  double get maxExtent => 40.0.h; // 设置最大扩展高度
-
-  @override
-  double get minExtent => 40.0.h; // 设置最小扩展高度
-
-  @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
-    return true;
   }
 }
