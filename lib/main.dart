@@ -7,7 +7,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:oktoast/oktoast.dart';
 
 void main() {
-  DioInstance.instance().initDio(baseUrl: "https://www.wanandroid.com");
+  DioInstance.instance().initDio(baseUrl: "http://10.0.2.2:16780/drift");
   runApp(const MyApp());
 }
 
@@ -47,7 +47,7 @@ class MyApp extends StatelessWidget {
               useMaterial3: true),
           navigatorKey: RouteUtils.navigatorKey,
           onGenerateRoute: Routes.generateRoute,
-          initialRoute: RoutePath.tab,
+          initialRoute: RoutePath.splash,
           // home: const HomePage(),
         );
       },

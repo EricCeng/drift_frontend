@@ -36,7 +36,7 @@ class DioInstance {
         sendTimeout: sendTimeout ?? _defaultTime,
         responseType: responseType,
         contentType: contentType);
-    _dio.interceptors.add(CookieInterceptor());
+    // _dio.interceptors.add(CookieInterceptor());
     _dio.interceptors.add(PrintLogInterceptor());
     _dio.interceptors.add(ResponseInterceptor());
   }

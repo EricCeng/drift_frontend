@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 // 标题文本 15 号
 TextStyle titleTextStyle15 = TextStyle(color: Colors.black, fontSize: 15.sp);
@@ -10,31 +11,45 @@ Text normalText(String? text) {
 }
 
 // 通用输入框
-Widget commonInput(
-    {String? labelText,
-    TextEditingController? controller,
-    ValueChanged<String>? onChanged,
-    bool? obscureText}) {
+Widget commonInput({
+  String? hintText,
+  String? labelText,
+  TextEditingController? controller,
+  ValueChanged<String>? onChanged,
+  bool? obscureText,
+}) {
   return TextField(
-    // onChanged: (value) {
-    //   input = value;
-    // },
     controller: controller,
     onChanged: onChanged,
-    style: TextStyle(color: Colors.white, fontSize: 14.sp),
+    style: TextStyle(color: Colors.black, fontSize: 16.sp),
     // 光标颜色
-    cursorColor: Colors.white,
+    cursorColor: Colors.deepPurple[200],
     // 密文显示
     obscureText: obscureText ?? false,
     decoration: InputDecoration(
-      labelText: labelText,
-      labelStyle: TextStyle(color: Colors.white),
+      hintText: hintText,
+      hintStyle: TextStyle(color: Colors.grey, fontSize: 16.sp),
+      // labelText: labelText,
+      // labelStyle: TextStyle(color: Colors.grey, fontSize: 16.sp),
+      filled: true,
+      fillColor: Colors.grey[100],
+      floatingLabelBehavior: FloatingLabelBehavior.never,
       // 未获取焦点前的边框样式
       enabledBorder: OutlineInputBorder(
           borderSide: BorderSide(color: Colors.white, width: 1.r)),
       // 获取焦点后的边框样式
       focusedBorder: OutlineInputBorder(
           borderSide: BorderSide(color: Colors.white, width: 2.r)),
+      suffixIcon: controller!.text.isNotEmpty
+          ? IconButton(
+              onPressed: () {
+                controller.clear();
+              },
+              icon: Icon(
+                PhosphorIconsRegular.xCircle,
+                color: Colors.grey,
+              ))
+          : null,
     ),
   );
 }

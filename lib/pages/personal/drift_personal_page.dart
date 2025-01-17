@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:drift_frontend/cache/ImageRatioCache.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -83,10 +82,12 @@ class _PersonalPageState extends State<DriftPersonalPage>
         await PaletteGenerator.fromImageProvider(
       AssetImage('assets/images/default_background.jpg'), // 替换为你的背景图路径
     );
-    setState(() {
-      _backgroundImageMainColor =
-          paletteGenerator.dominantColor?.color ?? Colors.blue;
-    });
+    if (mounted) {
+      setState(() {
+        _backgroundImageMainColor =
+            paletteGenerator.dominantColor?.color ?? Colors.blue;
+      });
+    }
   }
 
   // 加载既定的动态图片及计算图片宽高比
@@ -105,16 +106,16 @@ class _PersonalPageState extends State<DriftPersonalPage>
     // 初始化宽高比列表
     setState(() {
       imagePaths = filteredPaths;
-      imageRatios = List.filled(filteredPaths.length, null);
+      // imageRatios = List.filled(filteredPaths.length, null);
     });
 
     // 计算每张图片的宽高比
-    for (int i = 0; i < filteredPaths.length; i++) {
-      final ratio = await ImageRatioCache.get(filteredPaths[i]);
-      setState(() {
-        imageRatios[i] = ratio;
-      });
-    }
+    // for (int i = 0; i < filteredPaths.length; i++) {
+    //   final ratio = await ImageRatioCache.get(filteredPaths[i]);
+    //   setState(() {
+    //     imageRatios[i] = ratio;
+    //   });
+    // }
   }
 
   @override
@@ -135,15 +136,13 @@ class _PersonalPageState extends State<DriftPersonalPage>
                 // 正常滑动的 TabBar
                 if (offset < 300.h + _textHeight - kToolbarHeight)
                   _buildTabBar(),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildDynamicList(),
-                      _buildDynamicList(),
-                      _buildDynamicList(),
-                    ],
-                  ),
+                TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildDynamicList(),
+                    _buildDynamicList(),
+                    _buildDynamicList(),
+                  ],
                 ),
               ],
             ),
@@ -450,18 +449,25 @@ class _PersonalPageState extends State<DriftPersonalPage>
     // 设置文本样式，宽度为 200px，自动换行
     TextStyle textStyle = TextStyle(
       fontSize: 14.sp,
-      // fontWeight: FontWeight.w500,
       color: Colors.white,
     );
 
     // 通过 GlobalKey 获取文本区域的高度
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final RenderBox renderBox =
-          _textKey.currentContext!.findRenderObject() as RenderBox;
-      final height = renderBox.size.height;
-      setState(() {
-        _textHeight = height;
-      });
+      if (_textKey.currentContext != null &&
+          _textKey.currentContext!.findRenderObject() is RenderBox) {
+        final RenderBox renderBox =
+            _textKey.currentContext!.findRenderObject() as RenderBox;
+        // 确保 RenderBox 已经完成布局
+        if (renderBox.hasSize) {
+          final height = renderBox.size.height;
+          if (mounted) {
+            setState(() {
+              _textHeight = height;
+            });
+          }
+        }
+      }
     });
 
     return Container(
@@ -549,17 +555,17 @@ class _PersonalPageState extends State<DriftPersonalPage>
   }
 
   Widget _buildItem(int index) {
-    final aspectRatio = imageRatios[index];
+    // final aspectRatio = imageRatios[index];
     final width = MediaQuery.of(context).size.width / 2 - 5.w;
     // 如果宽高比尚未计算完成，展示加载占位符
-    if (aspectRatio == null) {
-      return Container(
-        width: width,
-        height: width,
-        alignment: Alignment.center,
-        child: CircularProgressIndicator(),
-      );
-    }
+    // if (aspectRatio == null) {
+    //   return Container(
+    //     width: width,
+    //     height: width,
+    //     alignment: Alignment.center,
+    //     child: CircularProgressIndicator(),
+    //   );
+    // }
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -568,16 +574,15 @@ class _PersonalPageState extends State<DriftPersonalPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
+          SizedBox(
             width: width,
-            height: width / aspectRatio,
-            decoration: BoxDecoration(
+            child: ClipRRect(
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(3.r),
                 topRight: Radius.circular(3.r),
               ),
-              image: DecorationImage(
-                image: AssetImage(imagePaths[index]),
+              child: Image.asset(
+                imagePaths[index],
                 fit: BoxFit.cover,
               ),
             ),

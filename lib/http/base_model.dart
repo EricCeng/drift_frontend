@@ -4,8 +4,8 @@ class BaseModel<T> {
   T? data;
 
   BaseModel.fromJson(dynamic json) {
-    errorCode = json['errorCode'];
-    errorMsg = json['errorMsg'];
+    errorCode = json['error_code'];
+    errorMsg = json['error_msg'];
     data = json['data'];
   }
 }
