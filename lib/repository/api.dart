@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:developer';
+
 import 'package:dio/dio.dart';
 import 'package:drift_frontend/repository/data/app_check_update_data.dart';
 import 'package:drift_frontend/repository/data/collects_list_data.dart';
@@ -63,25 +66,30 @@ class Api {
 
   // 注册
   Future<dynamic> register(
-      {String? username, String? password, String? rePassword}) async {
+      {String? phoneNumber, String? password, String? rePassword}) async {
+    Map<String, dynamic> requestData = {
+      "phone_number": phoneNumber,
+      "password": password,
+      "re_password": rePassword,
+    };
     Response response = await DioInstance.instance().post(
-        path: "/user/register",
-        queryParameters: {
-          "username": username,
-          "password": password,
-          "repassword": rePassword
-        });
+      path: "/auth/register",
+      data: jsonEncode(requestData),
+    );
     return response.data;
   }
 
   // 登录
-  Future<UserInfoData> login({String? username, String? password}) async {
-    Response response = await DioInstance.instance()
-        .post(path: "/user/login", queryParameters: {
-      "username": username,
+  Future<dynamic> login({String? phoneNumber, String? password}) async {
+    Map<String, dynamic> requestData = {
+      "phone_number": phoneNumber,
       "password": password,
-    });
-    return UserInfoData.fromJson(response.data);
+    };
+    Response response = await DioInstance.instance().post(
+      path: "/auth/login",
+      data: jsonEncode(requestData),
+    );
+    return response.data;
   }
 
   // 登出

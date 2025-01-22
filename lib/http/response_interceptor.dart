@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:dio/dio.dart';
 import 'package:drift_frontend/http/base_model.dart';
 import 'package:drift_frontend/route/routes.dart';
@@ -20,6 +22,7 @@ class ResponseInterceptor extends Interceptor {
           // errorCOde = 401 代表未登录
           // errorCode = 402 代表会话已过期，需要重新登录
           var rsp = BaseModel.fromJson(response.data);
+          log("rsp >>: ${rsp}");
           if (rsp.errorCode == 0) {
             if (rsp.data == null) {
               handler.next(Response(
@@ -31,16 +34,16 @@ class ResponseInterceptor extends Interceptor {
           } else if (rsp.errorCode == 401) {
             handler.reject(DioException(
                 requestOptions: response.requestOptions, message: "未登录"));
-            showToast("请先登录");
+            showToast("请先登录！");
             RouteUtils.navigatorKey.currentState?.pushNamedAndRemoveUntil(
                 RoutePath.loginPage, (route) => false);
           } else if (rsp.errorCode == 402) {
             handler.reject(DioException(
                 requestOptions: response.requestOptions, message: "会话已过期"));
-            showToast("会话已过期，请重新登录");
+            showToast("会话已过期，请重新登录！");
             RouteUtils.navigatorKey.currentState?.pushNamedAndRemoveUntil(
                 RoutePath.loginPage, (route) => false);
-          } else if (rsp.errorCode == 500) {
+          } else {
             showToast(rsp.errorMsg ?? "");
             if (rsp.data == null) {
               handler.next(Response(

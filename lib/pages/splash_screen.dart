@@ -2,6 +2,8 @@ import 'package:drift_frontend/pages/auth/auth_vm.dart';
 import 'package:drift_frontend/pages/tab_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../route/route_utils.dart';
 
@@ -29,8 +31,16 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Expanded(
-          child: Image.asset('assets/images/splash_screen.jpg'),
+        child: Align(
+          alignment: Alignment.center,
+          child: Text(
+            "DRIFT",
+            style: GoogleFonts.leckerliOne(
+              color: Colors.deepPurple[200],
+              fontSize: 80.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ),
     );

@@ -12,11 +12,14 @@ Text normalText(String? text) {
 
 // 通用输入框
 Widget commonInput({
+  Icon? prefixIcon,
   String? hintText,
   String? labelText,
   TextEditingController? controller,
   ValueChanged<String>? onChanged,
-  bool? obscureText,
+  bool? isObscured,
+  Widget? suffixIcon,
+  VoidCallback? onPressed,
 }) {
   return TextField(
     controller: controller,
@@ -25,50 +28,49 @@ Widget commonInput({
     // 光标颜色
     cursorColor: Colors.deepPurple[200],
     // 密文显示
-    obscureText: obscureText ?? false,
+    obscureText: isObscured ?? false,
     decoration: InputDecoration(
+      prefixIcon: prefixIcon,
       hintText: hintText,
-      hintStyle: TextStyle(color: Colors.grey, fontSize: 16.sp),
-      // labelText: labelText,
-      // labelStyle: TextStyle(color: Colors.grey, fontSize: 16.sp),
+      hintStyle: TextStyle(color: Colors.black26, fontSize: 16.sp),
       filled: true,
       fillColor: Colors.grey[100],
       floatingLabelBehavior: FloatingLabelBehavior.never,
       // 未获取焦点前的边框样式
       enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white, width: 1.r)),
+        borderSide: BorderSide(color: Colors.white, width: 1.r),
+        borderRadius: BorderRadius.circular(50),
+      ),
       // 获取焦点后的边框样式
       focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white, width: 2.r)),
-      suffixIcon: controller!.text.isNotEmpty
-          ? IconButton(
-              onPressed: () {
-                controller.clear();
-              },
-              icon: Icon(
-                PhosphorIconsRegular.xCircle,
-                color: Colors.grey,
-              ))
-          : null,
+        borderSide: BorderSide(color: Colors.white, width: 1.r),
+        borderRadius: BorderRadius.circular(50),
+      ),
+      suffixIcon: suffixIcon,
     ),
   );
 }
 
-// 白色边框按钮
-Widget whiteBorderButton({required String title, GestureTapCallback? onTap}) {
+Widget commonBorderButton({
+  required String title,
+  GestureTapCallback? onTap,
+  required bool isEnable,
+}) {
   return GestureDetector(
-    onTap: onTap,
+    onTap: isEnable ? onTap : null,
     child: Container(
       alignment: Alignment.center,
       width: double.infinity,
-      height: 45.h,
-      margin: EdgeInsets.only(left: 40.w, right: 40.w),
+      height: 50.h,
+      margin: EdgeInsets.only(left: 25.w, right: 25.w),
       decoration: BoxDecoration(
+          color: isEnable ? Colors.deepPurple[200] : Colors.grey[200],
           borderRadius: BorderRadius.all(Radius.circular(22.5.r)),
           border: Border.all(color: Colors.white, width: 1.r)),
       child: Text(
         title,
-        style: TextStyle(color: Colors.white, fontSize: 15.sp),
+        style: TextStyle(
+            color: isEnable ? Colors.white : Colors.grey[500], fontSize: 16.sp),
       ),
     ),
   );
