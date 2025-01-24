@@ -14,11 +14,11 @@ class AuthViewModel extends ChangeNotifier {
 
   Future<bool?> register() async {
     if (registerInfo.password != registerInfo.rePassword) {
-      showToast("两次密码必须一致！");
+      showToast("两次密码必须一致");
       return false;
     }
     if ((registerInfo.password?.length ?? 0) < 6) {
-      showToast("密码长度不能小于6位！");
+      showToast("密码长度不能小于6位");
       return false;
     }
     dynamic callback = await Api.instance.register(

@@ -1,15 +1,21 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:drift_frontend/common_ui/smart_refresh/smart_refresh_widget.dart';
+import 'package:drift_frontend/pages/profile/profile_vm.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:provider/provider.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class DriftPersonalPage extends StatefulWidget {
-  const DriftPersonalPage({super.key});
+  const DriftPersonalPage({super.key, this.userId});
+
+  final num? userId;
 
   @override
   State<StatefulWidget> createState() {
@@ -21,21 +27,21 @@ class _PersonalPageState extends State<DriftPersonalPage>
     with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   late TabController _tabController;
+  RefreshController _refreshController = RefreshController();
 
   // 滑动过程中 AppBar 背景透明度的动态变化
   double _appBarBackgroundOpacity = 0.0;
 
-  // // 个人信息区域的高度
-  // final double _profileInfoHeight = 240.0;
-
   // 从背景图中提取的主色
   Color _backgroundImageMainColor = Colors.blue;
 
-  double offset = 0; // 控制头像的 Y 轴位置
+  // 控制头像的 Y 轴位置
+  double offset = 0;
 
-  // 用来获取文本区域的高度
+  // 用来获取简介文本区域的高度
   final GlobalKey _textKey = GlobalKey();
 
+  // 简介文本高度
   double _textHeight = 0;
 
   // 保存筛选的本地图片路径
@@ -44,11 +50,14 @@ class _PersonalPageState extends State<DriftPersonalPage>
   // 保存每张图片的宽高比
   List<double?> imageRatios = [];
 
+  ProfileViewModel viewModel = ProfileViewModel();
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
     _tabController = TabController(length: 3, vsync: this);
+    viewModel.getProfileData(widget.userId);
     _extractMainColor();
     _loadAssets();
   }
@@ -80,7 +89,7 @@ class _PersonalPageState extends State<DriftPersonalPage>
   Future<void> _extractMainColor() async {
     final PaletteGenerator paletteGenerator =
         await PaletteGenerator.fromImageProvider(
-      AssetImage('assets/images/default_background.jpg'), // 替换为你的背景图路径
+      const AssetImage('assets/images/default_background.jpg'), // 替换为你的背景图路径
     );
     if (mounted) {
       setState(() {
@@ -120,68 +129,187 @@ class _PersonalPageState extends State<DriftPersonalPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          NestedScrollView(
-            controller: _scrollController,
-            headerSliverBuilder: (context, innerBoxIsScrolled) {
-              return [
-                // 个人信息
-                SliverToBoxAdapter(child: _buildProfileInfo()),
-              ];
-            },
-            body: Column(
-              children: [
-                // 正常滑动的 TabBar
-                if (offset < 300.h + _textHeight - kToolbarHeight)
-                  _buildTabBar(),
-                TabBarView(
-                  controller: _tabController,
+    return ChangeNotifierProvider<ProfileViewModel>(
+      create: (context) {
+        return viewModel;
+      },
+      child: Scaffold(
+        body: SmartRefreshWidget(
+          controller: _refreshController,
+          header: new ClassicHeader(
+            refreshStyle: RefreshStyle.Behind,
+          ),
+          // enablePullDown: widget.userId == null ? true : false,
+          onRefresh: () {
+            viewModel.getProfileData(widget.userId);
+            _refreshController.refreshCompleted();
+          },
+          onLoading: () {
+            _refreshController.loadComplete();
+          },
+          child: Stack(
+            children: [
+              NestedScrollView(
+                controller: _scrollController,
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                headerSliverBuilder: (context, innerBoxIsScrolled) {
+                  return [
+                    // 个人信息
+                    SliverToBoxAdapter(child: _buildProfileInfo()),
+                  ];
+                },
+                body: Column(
                   children: [
-                    _buildDynamicList(),
-                    _buildDynamicList(),
-                    _buildDynamicList(),
+                    // 正常滑动的 TabBar
+                    if (offset < 300.h + _textHeight - kToolbarHeight)
+                      _buildTabBar(),
+                    // 使 TabBarView 占满剩余空间
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildDynamicList(),
+                          _buildDynamicList(),
+                          _buildDynamicList(),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-              ],
-            ),
-          ),
-          // AppBar
-          _buildAppBar(),
-          // 当滚动到指定位置后固定的 TabBar
-          if (offset >= 300.h + _textHeight - kToolbarHeight)
-            Positioned(
-              top: kToolbarHeight,
-              left: 0,
-              right: 0,
-              child: _buildTabBar(),
-            ),
-          // 动态显示的 logo
-          AnimatedPositioned(
-            duration: Duration(milliseconds: 200),
-            curve: Curves.easeIn,
-            top: offset < 107 ? 107 - offset : 10.h,
-            left: MediaQuery.of(context).size.width / 2 - 18.w,
-            child: AnimatedOpacity(
-              opacity: (offset < 107 ? 0 : 1),
-              duration: Duration(milliseconds: 200),
-              child: CircleAvatar(
-                radius: 18,
-                backgroundImage: AssetImage('assets/images/default_avatar.jpg'),
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white,
-                      width: 0.5.w,
+              ),
+              // AppBar
+              _buildAppBar(),
+              // 当滚动到指定位置后固定的 TabBar
+              if (offset >= 300.h + _textHeight - kToolbarHeight)
+                Positioned(
+                  top: kToolbarHeight,
+                  left: 0,
+                  right: 0,
+                  child: _buildTabBar(),
+                ),
+              // 动态显示的 logo
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeIn,
+                top: offset < 107 ? 107 - offset : 10.h,
+                left: MediaQuery.of(context).size.width / 2 - 18.w,
+                child: AnimatedOpacity(
+                  opacity: (offset < 107 ? 0 : 1),
+                  duration: const Duration(milliseconds: 200),
+                  child: CircleAvatar(
+                    radius: 18,
+                    backgroundImage:
+                    const AssetImage('assets/images/default_avatar.jpg'),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 0.5.w,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
+        // NotificationListener<ScrollNotification>(
+        //   onNotification: (notification) {
+        //     if (notification is ScrollStartNotification &&
+        //         notification.metrics.pixels == 0.0 &&
+        //         notification.metrics.axis == Axis.vertical) {
+        //       _refreshController.requestRefresh();
+        //     }
+        //     return false;
+        //   },
+        //   child: SmartRefreshWidget(
+        //     controller: _refreshController,
+        //     header: new ClassicHeader(
+        //       refreshStyle: RefreshStyle.Behind,
+        //     ),
+        //     // enablePullDown: widget.userId == null ? true : false,
+        //     onRefresh: () {
+        //       viewModel.getProfileData(widget.userId);
+        //       _refreshController.refreshCompleted();
+        //     },
+        //     onLoading: () {
+        //       _refreshController.loadComplete();
+        //     },
+        //     child: Stack(
+        //       children: [
+        //         NestedScrollView(
+        //           controller: _scrollController,
+        //           // physics: const BouncingScrollPhysics(
+        //           //   parent: AlwaysScrollableScrollPhysics(),
+        //           // ),
+        //           headerSliverBuilder: (context, innerBoxIsScrolled) {
+        //             return [
+        //               // 个人信息
+        //               SliverToBoxAdapter(child: _buildProfileInfo()),
+        //             ];
+        //           },
+        //           body: Column(
+        //             children: [
+        //               // 正常滑动的 TabBar
+        //               if (offset < 300.h + _textHeight - kToolbarHeight)
+        //                 _buildTabBar(),
+        //               // 使 TabBarView 占满剩余空间
+        //               Expanded(
+        //                 child: TabBarView(
+        //                   controller: _tabController,
+        //                   children: [
+        //                     _buildDynamicList(),
+        //                     _buildDynamicList(),
+        //                     _buildDynamicList(),
+        //                   ],
+        //                 ),
+        //               ),
+        //             ],
+        //           ),
+        //         ),
+        //         // AppBar
+        //         _buildAppBar(),
+        //         // 当滚动到指定位置后固定的 TabBar
+        //         if (offset >= 300.h + _textHeight - kToolbarHeight)
+        //           Positioned(
+        //             top: kToolbarHeight,
+        //             left: 0,
+        //             right: 0,
+        //             child: _buildTabBar(),
+        //           ),
+        //         // 动态显示的 logo
+        //         AnimatedPositioned(
+        //           duration: const Duration(milliseconds: 200),
+        //           curve: Curves.easeIn,
+        //           top: offset < 107 ? 107 - offset : 10.h,
+        //           left: MediaQuery.of(context).size.width / 2 - 18.w,
+        //           child: AnimatedOpacity(
+        //             opacity: (offset < 107 ? 0 : 1),
+        //             duration: const Duration(milliseconds: 200),
+        //             child: CircleAvatar(
+        //               radius: 18,
+        //               backgroundImage:
+        //                   const AssetImage('assets/images/default_avatar.jpg'),
+        //               child: Container(
+        //                 decoration: BoxDecoration(
+        //                   shape: BoxShape.circle,
+        //                   border: Border.all(
+        //                     color: Colors.white,
+        //                     width: 0.5.w,
+        //                   ),
+        //                 ),
+        //               ),
+        //             ),
+        //           ),
+        //         ),
+        //       ],
+        //     ),
+        //   ),
+        // ),
       ),
     );
   }
@@ -569,7 +697,7 @@ class _PersonalPageState extends State<DriftPersonalPage>
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(3.r),
+        borderRadius: BorderRadius.circular(4.r),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -578,8 +706,8 @@ class _PersonalPageState extends State<DriftPersonalPage>
             width: width,
             child: ClipRRect(
               borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(3.r),
-                topRight: Radius.circular(3.r),
+                topLeft: Radius.circular(4.r),
+                topRight: Radius.circular(4.r),
               ),
               child: Image.asset(
                 imagePaths[index],

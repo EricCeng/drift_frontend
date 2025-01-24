@@ -147,7 +147,7 @@ class _LoginPageState extends State<LoginPage> {
                       password: pwdInputController?.text);
                   viewModel.login().then((value) {
                     if (value == true) {
-                      RouteUtils.pushAndRemoveUntil(context, TabPage());
+                      RouteUtils.pushAndRemoveUntil(context, const TabPage());
                     }
                   });
                 },
@@ -164,7 +164,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   GestureDetector(
                     onTap: () {
-                      RouteUtils.push(context, RegisterPage());
+                      RouteUtils.push(context, const RegisterPage());
                     },
                     child: Text(
                       "立即注册",

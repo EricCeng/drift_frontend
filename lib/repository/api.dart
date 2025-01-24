@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:dio/dio.dart';
 import 'package:drift_frontend/repository/data/app_check_update_data.dart';
@@ -7,10 +6,9 @@ import 'package:drift_frontend/repository/data/collects_list_data.dart';
 import 'package:drift_frontend/repository/data/common_website_data.dart';
 import 'package:drift_frontend/repository/data/knowledge_detail_list_data.dart';
 import 'package:drift_frontend/repository/data/knowledge_list_data.dart';
+import 'package:drift_frontend/repository/data/profile_data.dart';
 import 'package:drift_frontend/repository/data/search_hot_keys_data.dart';
 import 'package:drift_frontend/repository/data/search_list_data.dart';
-import 'package:drift_frontend/repository/data/user_info_data.dart';
-
 import '../http/dio_instance.dart';
 import 'data/home_banner_data.dart';
 import 'data/home_list_data.dart';
@@ -19,6 +17,51 @@ class Api {
   static Api instance = Api._();
 
   Api._();
+
+  // 检查登录状态
+  Future<void> check() async {
+    await DioInstance.instance().get(path: "/auth/check");
+  }
+
+  // 注册
+  Future<dynamic> register(
+      {String? phoneNumber, String? password, String? rePassword}) async {
+    Map<String, dynamic> requestData = {
+      "phone_number": phoneNumber,
+      "password": password,
+      "re_password": rePassword,
+    };
+    Response response = await DioInstance.instance().post(
+      path: "/auth/register",
+      data: jsonEncode(requestData),
+    );
+    return response.data;
+  }
+
+  // 登录
+  Future<dynamic> login({String? phoneNumber, String? password}) async {
+    Map<String, dynamic> requestData = {
+      "phone_number": phoneNumber,
+      "password": password,
+    };
+    Response response = await DioInstance.instance().post(
+      path: "/auth/login",
+      data: jsonEncode(requestData),
+    );
+    return response.data;
+  }
+
+  Future<ProfileData> getProfileData(num? userId) async {
+    Response response;
+    if (userId == null) {
+      response = await DioInstance.instance().get(path: "/user/info");
+    } else {
+      response = await DioInstance.instance().get(
+          path: "/user/info", param: {"user_Id": userId});
+    }
+    ProfileData profileData = ProfileData.fromJson(response.data);
+    return profileData;
+  }
 
   // 获取首页 banner 数据
   Future<List<HomeBannerData?>?> getBanner() async {
@@ -60,37 +103,7 @@ class Api {
     return hotKeysListData.keyList;
   }
 
-  Future<void> check() async {
-    await DioInstance.instance().get(path: "/auth/check");
-  }
 
-  // 注册
-  Future<dynamic> register(
-      {String? phoneNumber, String? password, String? rePassword}) async {
-    Map<String, dynamic> requestData = {
-      "phone_number": phoneNumber,
-      "password": password,
-      "re_password": rePassword,
-    };
-    Response response = await DioInstance.instance().post(
-      path: "/auth/register",
-      data: jsonEncode(requestData),
-    );
-    return response.data;
-  }
-
-  // 登录
-  Future<dynamic> login({String? phoneNumber, String? password}) async {
-    Map<String, dynamic> requestData = {
-      "phone_number": phoneNumber,
-      "password": password,
-    };
-    Response response = await DioInstance.instance().post(
-      path: "/auth/login",
-      data: jsonEncode(requestData),
-    );
-    return response.data;
-  }
 
   // 登出
   Future<bool?> logout() async {

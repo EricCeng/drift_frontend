@@ -1,12 +1,8 @@
-import 'dart:developer';
-
 import 'package:dio/dio.dart';
 import 'package:drift_frontend/http/base_model.dart';
 import 'package:drift_frontend/route/routes.dart';
-import 'package:flutter/material.dart';
 import 'package:oktoast/oktoast.dart';
 
-import '../pages/auth/login_page.dart';
 import '../route/route_utils.dart';
 
 class ResponseInterceptor extends Interceptor {
@@ -22,7 +18,6 @@ class ResponseInterceptor extends Interceptor {
           // errorCOde = 401 代表未登录
           // errorCode = 402 代表会话已过期，需要重新登录
           var rsp = BaseModel.fromJson(response.data);
-          log("rsp >>: ${rsp}");
           if (rsp.errorCode == 0) {
             if (rsp.data == null) {
               handler.next(Response(
