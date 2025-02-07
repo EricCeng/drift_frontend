@@ -6,6 +6,7 @@ import 'package:drift_frontend/repository/data/collects_list_data.dart';
 import 'package:drift_frontend/repository/data/common_website_data.dart';
 import 'package:drift_frontend/repository/data/knowledge_detail_list_data.dart';
 import 'package:drift_frontend/repository/data/knowledge_list_data.dart';
+import 'package:drift_frontend/repository/data/post_list_data.dart';
 import 'package:drift_frontend/repository/data/profile_data.dart';
 import 'package:drift_frontend/repository/data/search_hot_keys_data.dart';
 import 'package:drift_frontend/repository/data/search_list_data.dart';
@@ -51,16 +52,36 @@ class Api {
     return response.data;
   }
 
-  Future<ProfileData> getProfileData(num? userId) async {
-    Response response;
-    if (userId == null) {
-      response = await DioInstance.instance().get(path: "/user/info");
-    } else {
-      response = await DioInstance.instance().get(
-          path: "/user/info", param: {"user_Id": userId});
+  Future<ProfileData> getProfile(num? userId) async {
+    Map<String, dynamic>? params;
+    if (userId != null) {
+      params = {"user_id": userId};
     }
+    Response response = await DioInstance.instance()
+        .get(path: "/user/info", param: params);
     ProfileData profileData = ProfileData.fromJson(response.data);
     return profileData;
+  }
+
+  Future<List<PostData>?> getPersonalPostList(num? userId, int page) async {
+    Map<String, dynamic>? params;
+    if (userId == null) {
+      params = {"page": page};
+    } else {
+      params = {"page": page, "user_id": userId};
+    }
+    Response response = await DioInstance.instance()
+        .get(path: "/post/personal_posts", param: params);
+    PostListData list = PostListData.fromJson(response.data);
+    return list.postList;
+  }
+
+  Future<List<PostData>?> getAllPostList(bool? following, int page) async {
+    Map<String, dynamic>? params = {"page": page, "following": following ?? false};
+    Response response = await DioInstance.instance()
+        .get(path: "/post/all_posts", param: params);
+    PostListData list = PostListData.fromJson(response.data);
+    return list.postList;
   }
 
   // 获取首页 banner 数据
@@ -102,8 +123,6 @@ class Api {
         SearchHotKeysListData.fromJson(response.data);
     return hotKeysListData.keyList;
   }
-
-
 
   // 登出
   Future<bool?> logout() async {

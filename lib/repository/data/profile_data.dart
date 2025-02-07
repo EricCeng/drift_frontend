@@ -16,19 +16,19 @@ class ProfileData {
   });
 
   ProfileData.fromJson(dynamic json) {
-    userId = json['userId'];
+    userId = json['user_id'];
     username = json['username'];
-    avatarUrl = json['avatarUrl'];
+    avatarUrl = json['avatar_url'];
     bio = json['bio'];
     age = json['age'];
     gender = json['gender'];
     region = json['region'];
     occupation = json['occupation'];
     school = json['school'];
-    followingCount = json['followingCount'];
-    followerCount = json['followerCount'];
-    likedCount = json['likedCount'];
-    collectedCount = json['collectedCount'];
+    followingCount = json['following_count'];
+    followerCount = json['follower_count'];
+    likedCount = json['liked_count'];
+    collectedCount = json['collected_count'];
   }
 
   num? userId;

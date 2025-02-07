@@ -1,14 +1,12 @@
 import 'package:drift_frontend/http/dio_instance.dart';
 import 'package:drift_frontend/route/route_utils.dart';
 import 'package:drift_frontend/route/routes.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:oktoast/oktoast.dart';
 
 void main() {
-  DioInstance.instance().initDio(baseUrl: "http://10.0.2.2:16780/drift");
+  DioInstance.instance().initDio(baseUrl: "http://127.0.0.1:16780/drift");
   // 启用手势调试日志
   // debugPrintGestureArenaDiagnostics = true;
   runApp(const MyApp());

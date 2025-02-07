@@ -6,8 +6,8 @@ import '../../repository/api.dart';
 class ProfileViewModel with ChangeNotifier {
   ProfileData? profileData;
 
-  Future getProfileData(num? userId) async {
-    profileData = await Api.instance.getProfileData(userId);
+  Future getProfile(num? userId) async {
+    profileData = await Api.instance.getProfile(userId);
     notifyListeners();
   }
 }

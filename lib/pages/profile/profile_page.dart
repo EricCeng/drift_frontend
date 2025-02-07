@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 
-import 'package:drift_frontend/common_ui/smart_refresh/smart_refresh_widget.dart';
+import 'package:drift_frontend/pages/home/post_vm.dart';
 import 'package:drift_frontend/pages/profile/profile_vm.dart';
+import 'package:drift_frontend/repository/data/post_list_data.dart';
+import 'package:drift_frontend/repository/data/profile_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -10,7 +13,6 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
-import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class DriftPersonalPage extends StatefulWidget {
   const DriftPersonalPage({super.key, this.userId});
@@ -27,7 +29,7 @@ class _PersonalPageState extends State<DriftPersonalPage>
     with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   late TabController _tabController;
-  RefreshController _refreshController = RefreshController();
+  // RefreshController _refreshController = RefreshController();
 
   // 滑动过程中 AppBar 背景透明度的动态变化
   double _appBarBackgroundOpacity = 0.0;
@@ -50,16 +52,23 @@ class _PersonalPageState extends State<DriftPersonalPage>
   // 保存每张图片的宽高比
   List<double?> imageRatios = [];
 
-  ProfileViewModel viewModel = ProfileViewModel();
+  ProfileViewModel profileViewModel = ProfileViewModel();
+  PostViewModel postViewModel = PostViewModel();
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
     _tabController = TabController(length: 3, vsync: this);
-    viewModel.getProfileData(widget.userId);
     _extractMainColor();
     _loadAssets();
+    _initData();
+    _fetchTabData(_tabController.index);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        _fetchTabData(_tabController.index);
+      }
+    });
   }
 
   @override
@@ -68,6 +77,30 @@ class _PersonalPageState extends State<DriftPersonalPage>
     _scrollController.dispose();
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _initData() async {
+    await profileViewModel.getProfile(widget.userId);
+    setState(() {});
+  }
+
+  void _fetchTabData(int tabIndex) async {
+    switch (tabIndex) {
+      case 0:
+        // 请求动态数据
+        setState(() {
+          postViewModel.getPersonalPostList(widget.userId);
+        });
+        break;
+      case 1:
+        // 请求收藏数据
+        break;
+      case 2:
+        // 请求点赞数据
+        break;
+      default:
+        break;
+    }
   }
 
   void _onScroll() {
@@ -129,187 +162,79 @@ class _PersonalPageState extends State<DriftPersonalPage>
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<ProfileViewModel>(
-      create: (context) {
-        return viewModel;
-      },
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => profileViewModel),
+        ChangeNotifierProvider(create: (_) => postViewModel),
+      ],
       child: Scaffold(
-        body: SmartRefreshWidget(
-          controller: _refreshController,
-          header: new ClassicHeader(
-            refreshStyle: RefreshStyle.Behind,
-          ),
-          // enablePullDown: widget.userId == null ? true : false,
-          onRefresh: () {
-            viewModel.getProfileData(widget.userId);
-            _refreshController.refreshCompleted();
-          },
-          onLoading: () {
-            _refreshController.loadComplete();
-          },
-          child: Stack(
-            children: [
-              NestedScrollView(
-                controller: _scrollController,
-                physics: const BouncingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics(),
-                ),
-                headerSliverBuilder: (context, innerBoxIsScrolled) {
-                  return [
-                    // 个人信息
-                    SliverToBoxAdapter(child: _buildProfileInfo()),
-                  ];
-                },
-                body: Column(
-                  children: [
-                    // 正常滑动的 TabBar
-                    if (offset < 300.h + _textHeight - kToolbarHeight)
-                      _buildTabBar(),
-                    // 使 TabBarView 占满剩余空间
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _buildDynamicList(),
-                          _buildDynamicList(),
-                          _buildDynamicList(),
-                        ],
-                      ),
+        body: Stack(
+          children: [
+            NestedScrollView(
+              controller: _scrollController,
+              headerSliverBuilder: (context, innerBoxIsScrolled) {
+                return [
+                  // 个人信息
+                  SliverToBoxAdapter(
+                      child: _buildProfileInfo(profileViewModel.profileData)),
+                ];
+              },
+              body: Column(
+                children: [
+                  // 正常滑动的 TabBar
+                  if (offset < 300.h + _textHeight - kToolbarHeight)
+                    _buildTabBar(),
+                  // 使 TabBarView 占满剩余空间
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildTabView(postViewModel.personalPostList),
+                        _buildTabView(postViewModel.allPostList),
+                        _buildTabView(postViewModel.followingPostList),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              // AppBar
-              _buildAppBar(),
-              // 当滚动到指定位置后固定的 TabBar
-              if (offset >= 300.h + _textHeight - kToolbarHeight)
-                Positioned(
-                  top: kToolbarHeight,
-                  left: 0,
-                  right: 0,
-                  child: _buildTabBar(),
-                ),
-              // 动态显示的 logo
-              AnimatedPositioned(
+            ),
+            // AppBar
+            _buildAppBar(),
+            // 当滚动到指定位置后固定的 TabBar
+            if (offset >= 300.h + _textHeight - kToolbarHeight)
+              Positioned(
+                top: kToolbarHeight,
+                left: 0,
+                right: 0,
+                child: _buildTabBar(),
+              ),
+            // 动态显示的 logo
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeIn,
+              top: offset < 107 ? 107 - offset : 10.h,
+              left: MediaQuery.of(context).size.width / 2 - 18.w,
+              child: AnimatedOpacity(
+                opacity: (offset < 107 ? 0 : 1),
                 duration: const Duration(milliseconds: 200),
-                curve: Curves.easeIn,
-                top: offset < 107 ? 107 - offset : 10.h,
-                left: MediaQuery.of(context).size.width / 2 - 18.w,
-                child: AnimatedOpacity(
-                  opacity: (offset < 107 ? 0 : 1),
-                  duration: const Duration(milliseconds: 200),
-                  child: CircleAvatar(
-                    radius: 18,
-                    backgroundImage:
-                    const AssetImage('assets/images/default_avatar.jpg'),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 0.5.w,
-                        ),
+                child: CircleAvatar(
+                  radius: 18,
+                  backgroundImage:
+                      const AssetImage('assets/images/default_avatar.jpg'),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 0.5.w,
                       ),
                     ),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-        // NotificationListener<ScrollNotification>(
-        //   onNotification: (notification) {
-        //     if (notification is ScrollStartNotification &&
-        //         notification.metrics.pixels == 0.0 &&
-        //         notification.metrics.axis == Axis.vertical) {
-        //       _refreshController.requestRefresh();
-        //     }
-        //     return false;
-        //   },
-        //   child: SmartRefreshWidget(
-        //     controller: _refreshController,
-        //     header: new ClassicHeader(
-        //       refreshStyle: RefreshStyle.Behind,
-        //     ),
-        //     // enablePullDown: widget.userId == null ? true : false,
-        //     onRefresh: () {
-        //       viewModel.getProfileData(widget.userId);
-        //       _refreshController.refreshCompleted();
-        //     },
-        //     onLoading: () {
-        //       _refreshController.loadComplete();
-        //     },
-        //     child: Stack(
-        //       children: [
-        //         NestedScrollView(
-        //           controller: _scrollController,
-        //           // physics: const BouncingScrollPhysics(
-        //           //   parent: AlwaysScrollableScrollPhysics(),
-        //           // ),
-        //           headerSliverBuilder: (context, innerBoxIsScrolled) {
-        //             return [
-        //               // 个人信息
-        //               SliverToBoxAdapter(child: _buildProfileInfo()),
-        //             ];
-        //           },
-        //           body: Column(
-        //             children: [
-        //               // 正常滑动的 TabBar
-        //               if (offset < 300.h + _textHeight - kToolbarHeight)
-        //                 _buildTabBar(),
-        //               // 使 TabBarView 占满剩余空间
-        //               Expanded(
-        //                 child: TabBarView(
-        //                   controller: _tabController,
-        //                   children: [
-        //                     _buildDynamicList(),
-        //                     _buildDynamicList(),
-        //                     _buildDynamicList(),
-        //                   ],
-        //                 ),
-        //               ),
-        //             ],
-        //           ),
-        //         ),
-        //         // AppBar
-        //         _buildAppBar(),
-        //         // 当滚动到指定位置后固定的 TabBar
-        //         if (offset >= 300.h + _textHeight - kToolbarHeight)
-        //           Positioned(
-        //             top: kToolbarHeight,
-        //             left: 0,
-        //             right: 0,
-        //             child: _buildTabBar(),
-        //           ),
-        //         // 动态显示的 logo
-        //         AnimatedPositioned(
-        //           duration: const Duration(milliseconds: 200),
-        //           curve: Curves.easeIn,
-        //           top: offset < 107 ? 107 - offset : 10.h,
-        //           left: MediaQuery.of(context).size.width / 2 - 18.w,
-        //           child: AnimatedOpacity(
-        //             opacity: (offset < 107 ? 0 : 1),
-        //             duration: const Duration(milliseconds: 200),
-        //             child: CircleAvatar(
-        //               radius: 18,
-        //               backgroundImage:
-        //                   const AssetImage('assets/images/default_avatar.jpg'),
-        //               child: Container(
-        //                 decoration: BoxDecoration(
-        //                   shape: BoxShape.circle,
-        //                   border: Border.all(
-        //                     color: Colors.white,
-        //                     width: 0.5.w,
-        //                   ),
-        //                 ),
-        //               ),
-        //             ),
-        //           ),
-        //         ),
-        //       ],
-        //     ),
-        //   ),
-        // ),
       ),
     );
   }
@@ -334,11 +259,11 @@ class _PersonalPageState extends State<DriftPersonalPage>
   }
 
   // 构建个人信息区域
-  Widget _buildProfileInfo() {
+  Widget _buildProfileInfo(ProfileData? profileData) {
     return Column(
       children: [
         // 背景图和个人信息区域
-        Container(
+        SizedBox(
           width: double.infinity,
           child: Stack(
             children: [
@@ -347,7 +272,8 @@ class _PersonalPageState extends State<DriftPersonalPage>
                 height: 300.h + _textHeight,
                 decoration: BoxDecoration(
                   image: DecorationImage(
-                    image: AssetImage('assets/images/default_background.jpg'),
+                    image: const AssetImage(
+                        'assets/images/default_background.jpg'),
                     fit: BoxFit.cover,
                     colorFilter: ColorFilter.mode(
                       Colors.grey.withOpacity(0.2),
@@ -358,7 +284,7 @@ class _PersonalPageState extends State<DriftPersonalPage>
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      begin: Alignment(0.0, 0.67),
+                      begin: const Alignment(0.0, 0.67),
                       end: Alignment.bottomCenter,
                       colors: [
                         _backgroundImageMainColor.withOpacity(0.0),
@@ -368,7 +294,7 @@ class _PersonalPageState extends State<DriftPersonalPage>
                         _backgroundImageMainColor.withOpacity(0.8),
                         _backgroundImageMainColor,
                       ],
-                      stops: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+                      stops: const [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
                     ),
                   ),
                 ),
@@ -378,191 +304,185 @@ class _PersonalPageState extends State<DriftPersonalPage>
                 top: 65.h,
                 left: 15.w,
                 right: 15.w,
-                child: Container(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        // crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          CircleAvatar(
-                            radius: 45.r,
-                            backgroundImage:
-                                AssetImage('assets/images/default_avatar.jpg'),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 0.5.w,
-                                  )),
-                            ),
-                          ),
-                          SizedBox(width: 16.w),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "ttudsii", // 用户名
-                                style: TextStyle(
-                                    fontSize: 24.sp,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white),
-                              ),
-                              SizedBox(height: 12.h),
-                              Text(
-                                "ID: 123456789",
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  color: Colors.white60,
-                                ),
-                              )
-                            ],
-                          )
-                        ],
-                      ),
-                      SizedBox(height: 20.h),
-                      _buildDynamicText(
-                        "Fear or love, don't say the answer.\nActions speak louder than words.",
-                      ),
-                      SizedBox(height: 20.h),
-                      Row(
-                        children: [
-                          // 性别图标+年龄
-                          Container(
-                            height: 24.h,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      // crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(
+                          radius: 45.r,
+                          backgroundImage: const AssetImage(
+                              'assets/images/default_avatar.jpg'),
+                          child: Container(
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12.r),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 0.5.w,
+                                )),
+                          ),
+                        ),
+                        SizedBox(width: 16.w),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 用户名
+                            Text(
+                              profileData?.username ?? "drift",
+                              style: TextStyle(
+                                  fontSize: 24.sp,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white),
                             ),
-                            child: Container(
-                              margin: EdgeInsets.symmetric(
-                                  horizontal: 10.w, vertical: 4.h),
-                              child: Row(
+                            SizedBox(height: 12.h),
+                            // 用户ID
+                            Text(
+                              "ID: ${profileData?.userId}",
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: Colors.white60,
+                              ),
+                            )
+                          ],
+                        )
+                      ],
+                    ),
+                    SizedBox(height: 20.h),
+                    // 简介
+                    if (profileData?.bio != null)
+                      _buildDynamicText(profileData?.bio ?? ""),
+                    SizedBox(height: 20.h),
+                    // 性别（必有）、年龄、地区、职业
+                    if (profileData?.gender != null ||
+                        profileData?.age != null ||
+                        profileData?.region != null ||
+                        profileData?.occupation != null)
+                      Row(
+                        children: [
+                          // 性别 + 年龄
+                          if (profileData?.gender != null ||
+                              profileData?.age != null)
+                            _buildCircularContainer(
+                              Row(
                                 children: [
-                                  Icon(
-                                    PhosphorIconsRegular.genderMale,
-                                    color: Colors.blue[300],
-                                    size: 12.r,
-                                  ),
-                                  SizedBox(width: 2.w),
-                                  Text(
-                                    "18岁",
-                                    style: TextStyle(
-                                      fontSize: 11.sp,
-                                      color: Colors.white,
+                                  if (profileData?.gender != null)
+                                    profileData?.gender == "male"
+                                        ? Row(
+                                            children: [
+                                              Icon(
+                                                PhosphorIconsRegular.genderMale,
+                                                color: Colors.blue[300],
+                                                size: 12.r,
+                                              ),
+                                              SizedBox(width: 2.w),
+                                            ],
+                                          )
+                                        : Row(
+                                            children: [
+                                              Icon(
+                                                PhosphorIconsRegular
+                                                    .genderFemale,
+                                                color: Colors.blue[300],
+                                                size: 12.r,
+                                              ),
+                                              SizedBox(width: 2.w),
+                                            ],
+                                          ),
+                                  if (profileData?.age != null)
+                                    Text(
+                                      "${profileData?.age}岁",
+                                      style: TextStyle(
+                                        fontSize: 11.sp,
+                                        color: Colors.white,
+                                      ),
                                     ),
-                                  ),
                                 ],
                               ),
                             ),
-                          ),
                           SizedBox(width: 10.w),
-                          Container(
-                            height: 24.h,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                            child: Container(
-                              margin: EdgeInsets.symmetric(
-                                  horizontal: 10.w, vertical: 4.h),
-                              child: Text(
-                                "江苏南京",
+                          // 地区
+                          if (profileData?.region != null)
+                            _buildCircularContainer(
+                              Text(
+                                profileData?.region ?? "",
                                 style: TextStyle(
-                                  fontSize: 10.sp,
+                                  fontSize: 11.sp,
                                   color: Colors.white,
                                 ),
                               ),
                             ),
-                          ),
                           SizedBox(width: 10.w),
-                          Container(
-                            height: 24.h,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                            child: Container(
-                              margin: EdgeInsets.symmetric(
-                                  horizontal: 10.w, vertical: 4.h),
-                              child: Text(
-                                "程序员",
+                          // 职业
+                          if (profileData?.occupation != null)
+                            _buildCircularContainer(
+                              Text(
+                                profileData?.occupation ?? "",
                                 style: TextStyle(
-                                  fontSize: 10.sp,
+                                  fontSize: 11.sp,
                                   color: Colors.white,
                                 ),
                               ),
                             ),
-                          ),
                         ],
                       ),
-                      SizedBox(height: 20.h),
-                      Row(
-                        children: [
-                          Column(
-                            children: [
-                              Text(
-                                '454',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15.sp,
-                                ),
-                              ),
-                              Text(
-                                '关注',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12.sp,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(width: 16.w),
-                          Column(
-                            children: [
-                              Text(
-                                '5',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15.sp,
-                                ),
-                              ),
-                              Text(
-                                '粉丝',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12.sp,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(width: 16.w),
-                          Column(
-                            children: [
-                              Text(
-                                '71',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15.sp,
-                                ),
-                              ),
-                              Text(
-                                '获赞与收藏',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12.sp,
-                                ),
-                              ),
-                            ],
-                          )
-                        ],
-                      ),
-                    ],
-                  ),
+                    SizedBox(height: 20.h),
+                    // 关注、粉丝、获赞与收藏
+                    Row(
+                      children: [
+                        _buildCategoryCount(
+                            profileData?.followingCount ?? 0, "关注"),
+                        SizedBox(width: 16.w),
+                        _buildCategoryCount(
+                            profileData?.followerCount ?? 0, "粉丝"),
+                        SizedBox(width: 16.w),
+                        _buildCategoryCount(
+                            (profileData?.likedCount ?? 0) +
+                                (profileData?.collectedCount ?? 0),
+                            "获赞与收藏"),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCircularContainer(Widget content) {
+    return Container(
+      height: 24.h,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Container(
+          margin: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+          child: content),
+    );
+  }
+
+  Widget _buildCategoryCount(num count, String category) {
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: () {},
+          child: Text(
+            "$count",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 15.sp,
+            ),
+          ),
+        ),
+        Text(
+          category,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 12.sp,
           ),
         ),
       ],
@@ -616,73 +536,75 @@ class _PersonalPageState extends State<DriftPersonalPage>
     return Container(
       color: _backgroundImageMainColor,
       child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(12.r),
-              topRight: Radius.circular(12.r),
-            ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(12.r),
+            topRight: Radius.circular(12.r),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              TabBar(
-                controller: _tabController,
-                isScrollable: true,
-                indicatorColor: Colors.deepPurple[200],
-                dividerColor: Colors.transparent,
-                labelColor: Colors.black87,
-                labelStyle: TextStyle(fontSize: 16.sp),
-                unselectedLabelColor: Colors.grey,
-                tabAlignment: TabAlignment.start,
-                tabs: [
-                  Tab(text: '动态'),
-                  Tab(text: '收藏'),
-                  Tab(text: '赞过'),
-                ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              indicatorColor: Colors.deepPurple[200],
+              dividerColor: Colors.transparent,
+              labelColor: Colors.black87,
+              labelStyle: TextStyle(fontSize: 16.sp),
+              unselectedLabelColor: Colors.grey,
+              tabAlignment: TabAlignment.start,
+              tabs: const [
+                Tab(text: '动态'),
+                Tab(text: '收藏'),
+                Tab(text: '赞过'),
+              ],
+            ),
+            Padding(
+              padding: EdgeInsets.only(right: 8.w),
+              child: IconButton(
+                icon: const Icon(PhosphorIconsRegular.magnifyingGlass),
+                color: Colors.grey,
+                onPressed: () {
+                  // 搜索按钮的点击事件
+                },
               ),
-              Padding(
-                padding: EdgeInsets.only(right: 8.w),
-                child: IconButton(
-                  icon: Icon(PhosphorIconsRegular.magnifyingGlass),
-                  color: Colors.grey,
-                  onPressed: () {
-                    // 搜索按钮的点击事件
-                  },
-                ),
-              ),
-            ],
-          )),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   // 动态内容
-  Widget _buildDynamicList() {
+  Widget _buildTabView(List<PostData> list) {
     return Container(
       color: Colors.grey[100],
       child: MasonryGridView.builder(
         padding: EdgeInsets.all(5.w),
-        gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2, // 两列
+        // 两列
+        gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
         ),
-        mainAxisSpacing: 5.w,
         // 列间距
-        crossAxisSpacing: 5.w,
+        mainAxisSpacing: 5.w,
         // 行间距
-        itemCount: imagePaths.length,
+        crossAxisSpacing: 5.w,
+        itemCount: list.length,
         itemBuilder: (context, index) {
           return GestureDetector(
             onTap: () {
               // 点击事件
             },
-            child: _buildItem(index),
+            child: _buildItem(index, list[index]),
           );
         },
       ),
     );
   }
 
-  Widget _buildItem(int index) {
+  Widget _buildItem(int index, PostData? post) {
     // final aspectRatio = imageRatios[index];
     final width = MediaQuery.of(context).size.width / 2 - 5.w;
     // 如果宽高比尚未计算完成，展示加载占位符
@@ -710,7 +632,7 @@ class _PersonalPageState extends State<DriftPersonalPage>
                 topRight: Radius.circular(4.r),
               ),
               child: Image.asset(
-                imagePaths[index],
+                imagePaths[index % imagePaths.length],
                 fit: BoxFit.cover,
               ),
             ),
@@ -721,7 +643,7 @@ class _PersonalPageState extends State<DriftPersonalPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '标题标题',
+                  post?.title ?? "",
                   textAlign: TextAlign.start,
                   style: TextStyle(fontSize: 15.sp),
                 ),
@@ -731,25 +653,30 @@ class _PersonalPageState extends State<DriftPersonalPage>
                   children: [
                     CircleAvatar(
                       backgroundImage:
-                          AssetImage('assets/images/default_avatar.jpg'),
+                          const AssetImage('assets/images/default_avatar.jpg'),
                       radius: 10.r,
                     ),
                     SizedBox(width: 6.w),
                     Text(
-                      'ttudsii',
+                      post?.author ?? "",
                       style: TextStyle(fontSize: 12.sp, color: Colors.black54),
                     ),
-                    Spacer(),
+                    const Spacer(),
                     Icon(
-                      PhosphorIconsRegular.heart,
+                      (post?.liked ?? false)
+                          ? PhosphorIconsFill.heart
+                          : PhosphorIconsRegular.heart,
                       size: 18.sp,
-                      color: Colors.black45,
+                      color:
+                          (post?.liked ?? false) ? Colors.red : Colors.black45,
                     ),
                     SizedBox(width: 3.w),
-                    Text(
-                      '999',
-                      style: TextStyle(fontSize: 12.sp, color: Colors.black54),
-                    ),
+                    if (post?.likedCount != 0)
+                      Text(
+                        "${post?.likedCount}",
+                        style:
+                            TextStyle(fontSize: 12.sp, color: Colors.black54),
+                      ),
                   ],
                 ),
               ],
