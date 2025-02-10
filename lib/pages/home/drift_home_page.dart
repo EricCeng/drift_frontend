@@ -1,14 +1,16 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:drift_frontend/common_ui/smart_refresh/smart_refresh_widget.dart';
 import 'package:drift_frontend/pages/home/post_vm.dart';
 import 'package:drift_frontend/repository/data/post_list_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:waterfall_flow/waterfall_flow.dart';
 
 class DriftHomePage extends StatefulWidget {
   const DriftHomePage({super.key});
@@ -22,86 +24,31 @@ class DriftHomePage extends StatefulWidget {
 class _HomePageState extends State<DriftHomePage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-
-  // 保存筛选的本地图片路径
-  List<String> imagePaths = [];
-
-  PostViewModel postViewModel = PostViewModel();
+  final List<bool> _hasLoaded = [false, false];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(initialIndex: 1, length: 2, vsync: this);
-    _loadAssets();
-    // 避免在 initState 里同步执行网络请求
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchTabData(_tabController.index);
-    });
-    _tabController.addListener(() {
-      if (_tabController.indexIsChanging) {
-        log("indexIsChanging");
-        _fetchTabData(_tabController.index);
-      }
-    });
-  }
-
-  void _fetchTabData(int tabIndex) async {
-    log("fetch tab data: $tabIndex");
-    switch (tabIndex) {
-      case 0:
-        // 获取关注动态
-        await postViewModel.getFollowingPostList();
-        setState(() {});
-        break;
-      case 1:
-        // 获取发现动态
-        await postViewModel.getAllPostList();
-        setState(() {});
-        break;
-      default:
-        break;
-    }
-  }
-
-  // 加载既定的动态图片及计算图片宽高比
-  Future<void> _loadAssets() async {
-    // 获取 AssetManifest 中的所有资源路径
-    final manifestContent = await rootBundle.loadString('AssetManifest.json');
-    final Map<String, dynamic> manifestMap = json.decode(manifestContent);
-
-    // 筛选以 post_image 开头的 jpg 文件
-    final filteredPaths = manifestMap.keys
-        .where((path) =>
-            path.startsWith('assets/images/post_image') &&
-            path.endsWith('.jpg'))
-        .toList();
-
-    // 初始化宽高比列表
-    setState(() {
-      imagePaths = filteredPaths;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: postViewModel,
-      child: Scaffold(
-        body: SafeArea(
-          child: Column(
-            children: [
-              _buildTabBar(),
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildTabView(postViewModel.followingPostList),
-                    _buildTabView(postViewModel.allPostList),
-                  ],
-                ),
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildTabBar(),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  TabPage(index: 0, hasLoaded: _hasLoaded),
+                  TabPage(index: 1, hasLoaded: _hasLoaded),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -157,20 +104,134 @@ class _HomePageState extends State<DriftHomePage>
       ),
     );
   }
+}
+
+class TabPage extends StatefulWidget {
+  final int index;
+  final List<bool> hasLoaded;
+
+  const TabPage({super.key, required this.index, required this.hasLoaded});
+
+  @override
+  State<StatefulWidget> createState() {
+    return _TabPageState();
+  }
+}
+
+class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
+  PostViewModel postViewModel = PostViewModel();
+  late RefreshController _refreshController;
+
+  // 保存筛选的本地图片路径
+  List<String> imagePaths = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAssets();
+    _refreshController = RefreshController();
+    if (!widget.hasLoaded[widget.index]) {
+      _refreshOrLoadMore(false, widget.index);
+      // 标记该 tab 已加载
+      widget.hasLoaded[widget.index] = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    _refreshController.dispose();
+    super.dispose();
+  }
+
+  void _refreshOrLoadMore(bool loadMore, int tabIndex) {
+    bool following = tabIndex == 0 ? true : false;
+    postViewModel.getAllPostList(following, loadMore).then((value) {
+      log('loading');
+      if (loadMore) {
+        _refreshController.loadComplete();
+      } else {
+        _refreshController.refreshCompleted();
+      }
+    });
+  }
+
+  // 加载既定的动态图片及计算图片宽高比
+  Future<void> _loadAssets() async {
+    // 获取 AssetManifest 中的所有资源路径
+    final manifestContent = await rootBundle.loadString('AssetManifest.json');
+    final Map<String, dynamic> manifestMap = json.decode(manifestContent);
+
+    // 筛选以 post_image 开头的 jpg 文件
+    final filteredPaths = manifestMap.keys
+        .where((path) =>
+            path.startsWith('assets/images/post_image') &&
+            path.endsWith('.jpg'))
+        .toList();
+
+    // 初始化宽高比列表
+    setState(() {
+      imagePaths = filteredPaths;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // 确保状态不会丢失
+    return ChangeNotifierProvider<PostViewModel>(
+      create: (context) {
+        return postViewModel;
+      },
+      child: SmartRefreshWidget(
+        controller: _refreshController,
+        onRefresh: () {
+          log('onRefresh');
+          _refreshOrLoadMore(false, widget.index);
+        },
+        onLoading: () {
+          _refreshOrLoadMore(true, widget.index);
+        },
+        child: Consumer<PostViewModel>(
+          builder: (context, viewModel, child) {
+            List<PostData> list = widget.index == 0
+                ? viewModel.followingPostList
+                : viewModel.allPostList;
+            return _buildTabView(list);
+          },
+        ),
+      ),
+    );
+  }
 
   Widget _buildTabView(List<PostData> list) {
     return Container(
       color: Colors.grey[100],
-      child: MasonryGridView.builder(
-        padding: EdgeInsets.all(5.w),
-        // 两列
-        gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(
+      // child: MasonryGridView.builder(
+      //   padding: EdgeInsets.all(5.w),
+      //   // 两列
+      //   gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(
+      //     crossAxisCount: 2,
+      //   ),
+      //   // 列间距
+      //   mainAxisSpacing: 5.w,
+      //   // 行间距
+      //   crossAxisSpacing: 5.w,
+      //   itemCount: list.length,
+      //   itemBuilder: (context, index) {
+      //     return GestureDetector(
+      //       onTap: () {
+      //         // 点击事件
+      //       },
+      //       child: _buildItem(index, list[index]),
+      //     );
+      //   },
+      // ),
+      child: WaterfallFlow.builder(
+        padding: const EdgeInsets.all(5.0),
+        gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
+          crossAxisSpacing: 5.0.w,
+          mainAxisSpacing: 5.0.w,
         ),
-        // 列间距
-        mainAxisSpacing: 5.w,
-        // 行间距
-        crossAxisSpacing: 5.w,
         itemCount: list.length,
         itemBuilder: (context, index) {
           return GestureDetector(
@@ -256,4 +317,7 @@ class _HomePageState extends State<DriftHomePage>
       ),
     );
   }
+
+  @override
+  bool get wantKeepAlive => true; // 保持页面状态
 }

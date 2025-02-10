@@ -56,7 +56,7 @@ dependencies:
   # 显示 html 文本
   flutter_html: ^3.0.0-beta.2
   # 本地化存储
-  shared_preferences: ^2.3.2
+  shared_preferences: ^2.5.1
   # banner 轮播图插件
   flutter_swiper_view: ^1.1.8
   # Font Awesome 库
@@ -71,6 +71,7 @@ dependencies:
   palette_generator: ^0.3.3+5
   # 瀑布流
   flutter_staggered_grid_view: ^0.7.0
+  waterfall_flow: ^3.1.1
   # 字体库
   google_fonts: ^6.2.1
 

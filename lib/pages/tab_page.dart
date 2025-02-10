@@ -1,8 +1,11 @@
 import 'package:drift_frontend/common_ui/navigation/navigation_bar_widget.dart';
 import 'package:drift_frontend/pages/home/drift_home_page.dart';
+import 'package:drift_frontend/pages/message/message_page.dart';
 import 'package:drift_frontend/pages/profile/profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+
+import '../popular/popular_page.dart';
 
 class TabPage extends StatefulWidget {
   const TabPage({super.key});
@@ -29,9 +32,9 @@ class _TabPageState extends State<TabPage> {
   void initTabData() {
     pages = [
       const DriftHomePage(),
-      const DriftHomePage(),
-      const DriftHomePage(),
-      const DriftHomePage(),
+      const PopularPage(),
+      const MessagePage(),
+      const MessagePage(),
       const DriftPersonalPage()
     ];
     labels = ["首页", "热门", "", "消息", "我"];

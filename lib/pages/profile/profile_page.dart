@@ -5,7 +5,6 @@ import 'dart:developer';
 import 'package:drift_frontend/pages/home/post_vm.dart';
 import 'package:drift_frontend/pages/profile/profile_vm.dart';
 import 'package:drift_frontend/repository/data/post_list_data.dart';
-import 'package:drift_frontend/repository/data/profile_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -29,7 +28,9 @@ class _PersonalPageState extends State<DriftPersonalPage>
     with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   late TabController _tabController;
-  // RefreshController _refreshController = RefreshController();
+  late List<String> tabTitles;
+  late List<int> tabIndexes;
+  late List<bool> _hasLoaded;
 
   // 滑动过程中 AppBar 背景透明度的动态变化
   double _appBarBackgroundOpacity = 0.0;
@@ -46,29 +47,24 @@ class _PersonalPageState extends State<DriftPersonalPage>
   // 简介文本高度
   double _textHeight = 0;
 
-  // 保存筛选的本地图片路径
-  List<String> imagePaths = [];
-
-  // 保存每张图片的宽高比
-  List<double?> imageRatios = [];
-
   ProfileViewModel profileViewModel = ProfileViewModel();
-  PostViewModel postViewModel = PostViewModel();
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    _tabController = TabController(length: 3, vsync: this);
+    if (widget.userId != null) {
+      tabTitles = ["动态", "收藏"];
+      tabIndexes = [0, 1];
+      _hasLoaded = [false, false];
+    } else {
+      tabTitles = ["动态", "收藏", "赞过"];
+      tabIndexes = [0, 1, 2];
+      _hasLoaded = [false, false, false];
+    }
+    _tabController = TabController(length: tabTitles.length, vsync: this);
     _extractMainColor();
-    _loadAssets();
     _initData();
-    _fetchTabData(_tabController.index);
-    _tabController.addListener(() {
-      if (_tabController.indexIsChanging) {
-        _fetchTabData(_tabController.index);
-      }
-    });
   }
 
   @override
@@ -82,25 +78,6 @@ class _PersonalPageState extends State<DriftPersonalPage>
   void _initData() async {
     await profileViewModel.getProfile(widget.userId);
     setState(() {});
-  }
-
-  void _fetchTabData(int tabIndex) async {
-    switch (tabIndex) {
-      case 0:
-        // 请求动态数据
-        setState(() {
-          postViewModel.getPersonalPostList(widget.userId);
-        });
-        break;
-      case 1:
-        // 请求收藏数据
-        break;
-      case 2:
-        // 请求点赞数据
-        break;
-      default:
-        break;
-    }
   }
 
   void _onScroll() {
@@ -132,109 +109,78 @@ class _PersonalPageState extends State<DriftPersonalPage>
     }
   }
 
-  // 加载既定的动态图片及计算图片宽高比
-  Future<void> _loadAssets() async {
-    // 获取 AssetManifest 中的所有资源路径
-    final manifestContent = await rootBundle.loadString('AssetManifest.json');
-    final Map<String, dynamic> manifestMap = json.decode(manifestContent);
-
-    // 筛选以 post_image 开头的 jpg 文件
-    final filteredPaths = manifestMap.keys
-        .where((path) =>
-            path.startsWith('assets/images/post_image') &&
-            path.endsWith('.jpg'))
-        .toList();
-
-    // 初始化宽高比列表
-    setState(() {
-      imagePaths = filteredPaths;
-      // imageRatios = List.filled(filteredPaths.length, null);
-    });
-
-    // 计算每张图片的宽高比
-    // for (int i = 0; i < filteredPaths.length; i++) {
-    //   final ratio = await ImageRatioCache.get(filteredPaths[i]);
-    //   setState(() {
-    //     imageRatios[i] = ratio;
-    //   });
-    // }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => profileViewModel),
-        ChangeNotifierProvider(create: (_) => postViewModel),
-      ],
-      child: Scaffold(
-        body: Stack(
-          children: [
-            NestedScrollView(
-              controller: _scrollController,
-              headerSliverBuilder: (context, innerBoxIsScrolled) {
-                return [
-                  // 个人信息
-                  SliverToBoxAdapter(
-                      child: _buildProfileInfo(profileViewModel.profileData)),
-                ];
-              },
-              body: Column(
-                children: [
-                  // 正常滑动的 TabBar
-                  if (offset < 300.h + _textHeight - kToolbarHeight)
-                    _buildTabBar(),
-                  // 使 TabBarView 占满剩余空间
-                  Expanded(
-                    child: TabBarView(
-                      controller: _tabController,
-                      children: [
-                        _buildTabView(postViewModel.personalPostList),
-                        _buildTabView(postViewModel.allPostList),
-                        _buildTabView(postViewModel.followingPostList),
-                      ],
-                    ),
+    return Scaffold(
+      body: Stack(
+        children: [
+          NestedScrollView(
+            controller: _scrollController,
+            headerSliverBuilder: (context, innerBoxIsScrolled) {
+              return [
+                // 个人信息
+                SliverToBoxAdapter(
+                  child: _buildProfileInfo(),
+                ),
+              ];
+            },
+            body: Column(
+              children: [
+                // 正常滑动的 TabBar
+                if (offset < 300.h + _textHeight - kToolbarHeight)
+                  _buildTabBar(),
+                // 使 TabBarView 占满剩余空间
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: tabIndexes
+                        .map((index) => TabPage(
+                              userId: widget.userId,
+                              index: index,
+                              hasLoaded: _hasLoaded,
+                            ))
+                        .toList(),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            // AppBar
-            _buildAppBar(),
-            // 当滚动到指定位置后固定的 TabBar
-            if (offset >= 300.h + _textHeight - kToolbarHeight)
-              Positioned(
-                top: kToolbarHeight,
-                left: 0,
-                right: 0,
-                child: _buildTabBar(),
-              ),
-            // 动态显示的 logo
-            AnimatedPositioned(
+          ),
+          // AppBar
+          _buildAppBar(),
+          // 当滚动到指定位置后固定的 TabBar
+          if (offset >= 300.h + _textHeight - kToolbarHeight)
+            Positioned(
+              top: kToolbarHeight,
+              left: 0,
+              right: 0,
+              child: _buildTabBar(),
+            ),
+          // 动态显示的 logo
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeIn,
+            top: offset < 107 ? 107 - offset : 10.h,
+            left: MediaQuery.of(context).size.width / 2 - 18.w,
+            child: AnimatedOpacity(
+              opacity: (offset < 107 ? 0 : 1),
               duration: const Duration(milliseconds: 200),
-              curve: Curves.easeIn,
-              top: offset < 107 ? 107 - offset : 10.h,
-              left: MediaQuery.of(context).size.width / 2 - 18.w,
-              child: AnimatedOpacity(
-                opacity: (offset < 107 ? 0 : 1),
-                duration: const Duration(milliseconds: 200),
-                child: CircleAvatar(
-                  radius: 18,
-                  backgroundImage:
-                      const AssetImage('assets/images/default_avatar.jpg'),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 0.5.w,
-                      ),
+              child: CircleAvatar(
+                radius: 18,
+                backgroundImage:
+                    const AssetImage('assets/images/default_avatar.jpg'),
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 0.5.w,
                     ),
                   ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -259,196 +205,208 @@ class _PersonalPageState extends State<DriftPersonalPage>
   }
 
   // 构建个人信息区域
-  Widget _buildProfileInfo(ProfileData? profileData) {
-    return Column(
-      children: [
-        // 背景图和个人信息区域
-        SizedBox(
-          width: double.infinity,
-          child: Stack(
-            children: [
-              // 背景图
-              Container(
-                height: 300.h + _textHeight,
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: const AssetImage(
-                        'assets/images/default_background.jpg'),
-                    fit: BoxFit.cover,
-                    colorFilter: ColorFilter.mode(
-                      Colors.grey.withOpacity(0.2),
-                      BlendMode.darken,
-                    ),
-                  ),
-                ),
-                child: Container(
+  Widget _buildProfileInfo() {
+    return ChangeNotifierProvider<ProfileViewModel>(
+      create: (context) {
+        return profileViewModel;
+      },
+      child: Column(
+        children: [
+          // 背景图和个人信息区域
+          SizedBox(
+            width: double.infinity,
+            child: Stack(
+              children: [
+                // 背景图
+                Container(
+                  height: 300.h + _textHeight,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: const Alignment(0.0, 0.67),
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        _backgroundImageMainColor.withOpacity(0.0),
-                        _backgroundImageMainColor.withOpacity(0.2),
-                        _backgroundImageMainColor.withOpacity(0.4),
-                        _backgroundImageMainColor.withOpacity(0.6),
-                        _backgroundImageMainColor.withOpacity(0.8),
-                        _backgroundImageMainColor,
-                      ],
-                      stops: const [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+                    image: DecorationImage(
+                      image: const AssetImage(
+                          'assets/images/default_background.jpg'),
+                      fit: BoxFit.cover,
+                      colorFilter: ColorFilter.mode(
+                        Colors.grey.withOpacity(0.2),
+                        BlendMode.darken,
+                      ),
+                    ),
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: const Alignment(0.0, 0.67),
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          _backgroundImageMainColor.withOpacity(0.0),
+                          _backgroundImageMainColor.withOpacity(0.2),
+                          _backgroundImageMainColor.withOpacity(0.4),
+                          _backgroundImageMainColor.withOpacity(0.6),
+                          _backgroundImageMainColor.withOpacity(0.8),
+                          _backgroundImageMainColor,
+                        ],
+                        stops: const [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              // 个人信息内容
-              Positioned(
-                top: 65.h,
-                left: 15.w,
-                right: 15.w,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      // crossAxisAlignment: CrossAxisAlignment.start,
+                // 个人信息内容
+                Positioned(
+                  top: 65.h,
+                  left: 15.w,
+                  right: 15.w,
+                  child: Consumer<ProfileViewModel>(
+                      builder: (context, viewModel, child) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
-                          radius: 45.r,
-                          backgroundImage: const AssetImage(
-                              'assets/images/default_avatar.jpg'),
-                          child: Container(
-                            decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 0.5.w,
-                                )),
-                          ),
-                        ),
-                        SizedBox(width: 16.w),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        Row(
+                          // crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // 用户名
-                            Text(
-                              profileData?.username ?? "drift",
-                              style: TextStyle(
-                                  fontSize: 24.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white),
-                            ),
-                            SizedBox(height: 12.h),
-                            // 用户ID
-                            Text(
-                              "ID: ${profileData?.userId}",
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                color: Colors.white60,
+                            CircleAvatar(
+                              radius: 45.r,
+                              backgroundImage: const AssetImage(
+                                  'assets/images/default_avatar.jpg'),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 0.5.w,
+                                    )),
                               ),
+                            ),
+                            SizedBox(width: 16.w),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // 用户名
+                                Text(
+                                  viewModel.profileData?.username ?? "drift",
+                                  style: TextStyle(
+                                      fontSize: 24.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white),
+                                ),
+                                SizedBox(height: 12.h),
+                                // 用户ID
+                                Text(
+                                  "ID: ${viewModel.profileData?.userId}",
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    color: Colors.white60,
+                                  ),
+                                )
+                              ],
                             )
                           ],
-                        )
-                      ],
-                    ),
-                    SizedBox(height: 20.h),
-                    // 简介
-                    if (profileData?.bio != null)
-                      _buildDynamicText(profileData?.bio ?? ""),
-                    SizedBox(height: 20.h),
-                    // 性别（必有）、年龄、地区、职业
-                    if (profileData?.gender != null ||
-                        profileData?.age != null ||
-                        profileData?.region != null ||
-                        profileData?.occupation != null)
-                      Row(
-                        children: [
-                          // 性别 + 年龄
-                          if (profileData?.gender != null ||
-                              profileData?.age != null)
-                            _buildCircularContainer(
-                              Row(
-                                children: [
-                                  if (profileData?.gender != null)
-                                    profileData?.gender == "male"
-                                        ? Row(
-                                            children: [
-                                              Icon(
-                                                PhosphorIconsRegular.genderMale,
-                                                color: Colors.blue[300],
-                                                size: 12.r,
+                        ),
+                        SizedBox(height: 20.h),
+                        // 简介
+                        if (viewModel.profileData?.bio != null)
+                          _buildDynamicText(viewModel.profileData?.bio ?? ""),
+                        SizedBox(height: 20.h),
+                        // 性别（必有）、年龄、地区、职业
+                        if (viewModel.profileData?.gender != null ||
+                            viewModel.profileData?.age != null ||
+                            viewModel.profileData?.region != null ||
+                            viewModel.profileData?.occupation != null)
+                          Row(
+                            children: [
+                              // 性别 + 年龄
+                              if (viewModel.profileData?.gender != null ||
+                                  viewModel.profileData?.age != null)
+                                _buildCircularContainer(
+                                  Row(
+                                    children: [
+                                      if (viewModel.profileData?.gender != null)
+                                        viewModel.profileData?.gender == "male"
+                                            ? Row(
+                                                children: [
+                                                  Icon(
+                                                    PhosphorIconsRegular
+                                                        .genderMale,
+                                                    color: Colors.blue[300],
+                                                    size: 12.r,
+                                                  ),
+                                                  SizedBox(width: 2.w),
+                                                ],
+                                              )
+                                            : Row(
+                                                children: [
+                                                  Icon(
+                                                    PhosphorIconsRegular
+                                                        .genderFemale,
+                                                    color: Colors.blue[300],
+                                                    size: 12.r,
+                                                  ),
+                                                  SizedBox(width: 2.w),
+                                                ],
                                               ),
-                                              SizedBox(width: 2.w),
-                                            ],
-                                          )
-                                        : Row(
-                                            children: [
-                                              Icon(
-                                                PhosphorIconsRegular
-                                                    .genderFemale,
-                                                color: Colors.blue[300],
-                                                size: 12.r,
-                                              ),
-                                              SizedBox(width: 2.w),
-                                            ],
+                                      if (viewModel.profileData?.age != null)
+                                        Text(
+                                          "${viewModel.profileData?.age}岁",
+                                          style: TextStyle(
+                                            fontSize: 11.sp,
+                                            color: Colors.white,
                                           ),
-                                  if (profileData?.age != null)
-                                    Text(
-                                      "${profileData?.age}岁",
-                                      style: TextStyle(
-                                        fontSize: 11.sp,
-                                        color: Colors.white,
-                                      ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              SizedBox(width: 10.w),
+                              // 地区
+                              if (viewModel.profileData?.region != null)
+                                _buildCircularContainer(
+                                  Text(
+                                    viewModel.profileData?.region ?? "",
+                                    style: TextStyle(
+                                      fontSize: 11.sp,
+                                      color: Colors.white,
                                     ),
-                                ],
-                              ),
-                            ),
-                          SizedBox(width: 10.w),
-                          // 地区
-                          if (profileData?.region != null)
-                            _buildCircularContainer(
-                              Text(
-                                profileData?.region ?? "",
-                                style: TextStyle(
-                                  fontSize: 11.sp,
-                                  color: Colors.white,
+                                  ),
                                 ),
-                              ),
-                            ),
-                          SizedBox(width: 10.w),
-                          // 职业
-                          if (profileData?.occupation != null)
-                            _buildCircularContainer(
-                              Text(
-                                profileData?.occupation ?? "",
-                                style: TextStyle(
-                                  fontSize: 11.sp,
-                                  color: Colors.white,
+                              SizedBox(width: 10.w),
+                              // 职业
+                              if (viewModel.profileData?.occupation != null)
+                                _buildCircularContainer(
+                                  Text(
+                                    viewModel.profileData?.occupation ?? "",
+                                    style: TextStyle(
+                                      fontSize: 11.sp,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    SizedBox(height: 20.h),
-                    // 关注、粉丝、获赞与收藏
-                    Row(
-                      children: [
-                        _buildCategoryCount(
-                            profileData?.followingCount ?? 0, "关注"),
-                        SizedBox(width: 16.w),
-                        _buildCategoryCount(
-                            profileData?.followerCount ?? 0, "粉丝"),
-                        SizedBox(width: 16.w),
-                        _buildCategoryCount(
-                            (profileData?.likedCount ?? 0) +
-                                (profileData?.collectedCount ?? 0),
-                            "获赞与收藏"),
+                            ],
+                          ),
+                        SizedBox(height: 20.h),
+                        // 关注、粉丝、获赞与收藏
+                        Row(
+                          children: [
+                            _buildCategoryCount(
+                                viewModel.profileData?.followingCount ?? 0,
+                                "关注"),
+                            SizedBox(width: 16.w),
+                            _buildCategoryCount(
+                                viewModel.profileData?.followerCount ?? 0,
+                                "粉丝"),
+                            SizedBox(width: 16.w),
+                            _buildCategoryCount(
+                                (viewModel.profileData?.likedCount ?? 0) +
+                                    (viewModel.profileData?.collectedCount ??
+                                        0),
+                                "获赞与收藏"),
+                          ],
+                        ),
                       ],
-                    ),
-                  ],
+                    );
+                  }),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -555,11 +513,7 @@ class _PersonalPageState extends State<DriftPersonalPage>
               labelStyle: TextStyle(fontSize: 16.sp),
               unselectedLabelColor: Colors.grey,
               tabAlignment: TabAlignment.start,
-              tabs: const [
-                Tab(text: '动态'),
-                Tab(text: '收藏'),
-                Tab(text: '赞过'),
-              ],
+              tabs: tabTitles.map((title) => Tab(text: title)).toList(),
             ),
             Padding(
               padding: EdgeInsets.only(right: 8.w),
@@ -573,6 +527,113 @@ class _PersonalPageState extends State<DriftPersonalPage>
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class TabPage extends StatefulWidget {
+  final num? userId;
+  final int index;
+  final List<bool> hasLoaded;
+
+  const TabPage(
+      {super.key,
+      required this.userId,
+      required this.index,
+      required this.hasLoaded});
+
+  @override
+  State<StatefulWidget> createState() {
+    return _TabPageState();
+  }
+}
+
+class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
+  PostViewModel postViewModel = PostViewModel();
+
+  // 保存筛选的本地图片路径
+  List<String> imagePaths = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAssets();
+    if (!widget.hasLoaded[widget.index]) {
+      _fetchTabData(widget.index);
+      // 标记该 tab 已加载
+      widget.hasLoaded[widget.index] = true;
+    }
+  }
+
+  void _fetchTabData(int tabIndex) async {
+    log("fetch profile tab data: $tabIndex");
+    switch (tabIndex) {
+      case 0:
+        // 请求动态数据
+        await postViewModel.getPersonalPostList(widget.userId);
+        setState(() {});
+        break;
+      case 1:
+        // 请求收藏数据
+        await postViewModel.getCollectionPostList(widget.userId);
+        setState(() {});
+        break;
+      case 2:
+        // 请求点赞数据
+        await postViewModel.getLikePostList();
+        setState(() {});
+        break;
+      default:
+        break;
+    }
+  }
+
+  // 加载既定的动态图片及计算图片宽高比
+  Future<void> _loadAssets() async {
+    // 获取 AssetManifest 中的所有资源路径
+    final manifestContent = await rootBundle.loadString('AssetManifest.json');
+    final Map<String, dynamic> manifestMap = json.decode(manifestContent);
+
+    // 筛选以 post_image 开头的 jpg 文件
+    final filteredPaths = manifestMap.keys
+        .where((path) =>
+            path.startsWith('assets/images/post_image') &&
+            path.endsWith('.jpg'))
+        .toList();
+
+    // 初始化宽高比列表
+    setState(() {
+      imagePaths = filteredPaths;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // 确保状态不会丢失
+    return ChangeNotifierProvider<PostViewModel>(
+      create: (context) {
+        return postViewModel;
+      },
+      child: Consumer<PostViewModel>(
+        builder: (context, viewModel, child) {
+          List<PostData> list;
+          switch (widget.index) {
+            case 0:
+              list = viewModel.personalPostList;
+              break;
+            case 1:
+              list = viewModel.collectionPostList;
+              break;
+            case 2:
+              list = viewModel.likePostList;
+              break;
+            default:
+              list = [];
+              break;
+          }
+          return _buildTabView(list);
+        },
       ),
     );
   }
@@ -686,4 +747,7 @@ class _PersonalPageState extends State<DriftPersonalPage>
       ),
     );
   }
+
+  @override
+  bool get wantKeepAlive => true; // 保持页面状态
 }

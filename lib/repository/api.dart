@@ -57,8 +57,8 @@ class Api {
     if (userId != null) {
       params = {"user_id": userId};
     }
-    Response response = await DioInstance.instance()
-        .get(path: "/user/info", param: params);
+    Response response =
+        await DioInstance.instance().get(path: "/user/info", param: params);
     ProfileData profileData = ProfileData.fromJson(response.data);
     return profileData;
   }
@@ -70,16 +70,39 @@ class Api {
     } else {
       params = {"page": page, "user_id": userId};
     }
-    Response response = await DioInstance.instance()
-        .get(path: "/post/personal_posts", param: params);
+    Response response =
+        await DioInstance.instance().get(path: "/post/personal", param: params);
     PostListData list = PostListData.fromJson(response.data);
     return list.postList;
   }
 
-  Future<List<PostData>?> getAllPostList(bool? following, int page) async {
-    Map<String, dynamic>? params = {"page": page, "following": following ?? false};
+  Future<List<PostData>?> getCollectionPostList(num? userId, int page) async {
+    Map<String, dynamic>? params;
+    if (userId == null) {
+      params = {"page": page};
+    } else {
+      params = {"page": page, "user_id": userId};
+    }
     Response response = await DioInstance.instance()
-        .get(path: "/post/all_posts", param: params);
+        .get(path: "/post/collection", param: params);
+    PostListData list = PostListData.fromJson(response.data);
+    return list.postList;
+  }
+
+  Future<List<PostData>?> getLikePostList(int page) async {
+    Response response = await DioInstance.instance()
+        .get(path: "/post/like", param: {"page": page});
+    PostListData list = PostListData.fromJson(response.data);
+    return list.postList;
+  }
+
+  Future<List<PostData>?> getAllPostList(bool following, int page) async {
+    Map<String, dynamic>? params = {
+      "page": page,
+      "following": following
+    };
+    Response response =
+        await DioInstance.instance().get(path: "/post/all", param: params);
     PostListData list = PostListData.fromJson(response.data);
     return list.postList;
   }
