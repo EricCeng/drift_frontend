@@ -16,6 +16,7 @@ class PostData {
     this.postId,
     this.title,
     this.firstImageUrl,
+    this.releaseTime,
     this.authorId,
     this.author,
     this.authorAvatarUrl,
@@ -27,6 +28,7 @@ class PostData {
     postId = json['post_id'];
     title = json['title'];
     firstImageUrl = json['first_image_url'];
+    releaseTime = json['release_time'];
     authorId = json['author_id'];
     author = json['author'];
     authorAvatarUrl = json['author_avatar_url'];
@@ -37,6 +39,7 @@ class PostData {
   num? postId;
   String? title;
   String? firstImageUrl;
+  String? releaseTime;
   num? authorId;
   String? author;
   String? authorAvatarUrl;

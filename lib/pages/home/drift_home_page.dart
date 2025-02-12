@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'package:drift_frontend/common_ui/smart_refresh/smart_refresh_widget.dart';
 import 'package:drift_frontend/pages/home/post_vm.dart';
 import 'package:drift_frontend/repository/data/post_list_data.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -121,6 +122,7 @@ class TabPage extends StatefulWidget {
 class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
   PostViewModel postViewModel = PostViewModel();
   late RefreshController _refreshController;
+  bool following = false;
 
   // 保存筛选的本地图片路径
   List<String> imagePaths = [];
@@ -144,7 +146,7 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
   }
 
   void _refreshOrLoadMore(bool loadMore, int tabIndex) {
-    bool following = tabIndex == 0 ? true : false;
+    following = tabIndex == 0;
     postViewModel.getAllPostList(following, loadMore).then((value) {
       log('loading');
       if (loadMore) {
@@ -192,9 +194,8 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
         },
         child: Consumer<PostViewModel>(
           builder: (context, viewModel, child) {
-            List<PostData> list = widget.index == 0
-                ? viewModel.followingPostList
-                : viewModel.allPostList;
+            List<PostData> list =
+                following ? viewModel.followingPostList : viewModel.allPostList;
             return _buildTabView(list);
           },
         ),
@@ -247,6 +248,7 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
 
   Widget _buildItem(int index, PostData? post) {
     final width = MediaQuery.of(context).size.width / 2 - 5.w;
+    bool isLiked = post?.liked ?? false;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -276,7 +278,7 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
                 Text(
                   post?.title ?? "",
                   textAlign: TextAlign.start,
-                  style: TextStyle(fontSize: 15.sp),
+                  style: TextStyle(fontSize: 14.sp),
                 ),
                 SizedBox(height: 10.h),
                 Row(
@@ -285,29 +287,71 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
                     CircleAvatar(
                       backgroundImage:
                           const AssetImage('assets/images/default_avatar.jpg'),
-                      radius: 10.r,
+                      radius: following ? 14.r : 10.r,
                     ),
                     SizedBox(width: 6.w),
-                    Text(
-                      post?.author ?? "",
-                      style: TextStyle(fontSize: 12.sp, color: Colors.black54),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "${post?.author}",
+                          style:
+                              TextStyle(fontSize: 10.sp, color: Colors.grey[700]),
+                        ),
+                        if (following)
+                          Text(
+                            "${post?.releaseTime}",
+                            style: TextStyle(
+                                fontSize: 10.sp, color: Colors.black38),
+                          ),
+                      ],
                     ),
                     const Spacer(),
-                    Icon(
-                      (post?.liked ?? false)
-                          ? PhosphorIconsFill.heart
-                          : PhosphorIconsRegular.heart,
-                      size: 18.sp,
-                      color:
-                          (post?.liked ?? false) ? Colors.red : Colors.black45,
+                    // 点赞按钮
+                    GestureDetector(
+                      onTap: () {},
+                      child: AnimatedScale(
+                        scale: isLiked ? 1.2 : 1.0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(
+                          isLiked ? PhosphorIconsFill.heart : PhosphorIconsRegular.heart,
+                          color: isLiked ? Colors.red : Colors.black45,
+                          size: 16.sp,
+                        ),
+                      ),
                     ),
                     SizedBox(width: 3.w),
-                    if (post?.likedCount != 0)
-                      Text(
-                        "${post?.likedCount}",
-                        style:
-                            TextStyle(fontSize: 12.sp, color: Colors.black54),
+                    // 点赞数
+                    GestureDetector(
+                      onTap: () {},
+                      child: Text(
+                        "5434",
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          color: Colors.grey[700],
+                        ),
                       ),
+                    ),
+                    // Icon(
+                    //   (post?.liked ?? false)
+                    //       ? PhosphorIconsFill.heart
+                    //       : CupertinoIcons.heart,
+                    //   size: 16.sp,
+                    //   color:
+                    //       (post?.liked ?? false) ? Colors.red : Colors.black45,
+                    // ),
+                    // SizedBox(width: 3.w),
+                    // Text(
+                    //   "5434",
+                    //   style:
+                    //   TextStyle(fontSize: 11.sp, color: Colors.grey[700]),
+                    // ),
+                    // if (post?.likedCount != 0)
+                    //   Text(
+                    //     "${post?.likedCount}",
+                    //     style:
+                    //         TextStyle(fontSize: 10.sp, color: Colors.black54),
+                    //   ),
                   ],
                 ),
               ],
