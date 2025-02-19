@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 // 标题文本 15 号
 TextStyle titleTextStyle15 = TextStyle(color: Colors.black, fontSize: 15.sp);

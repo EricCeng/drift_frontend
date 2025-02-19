@@ -3,9 +3,13 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:drift_frontend/repository/data/app_check_update_data.dart';
 import 'package:drift_frontend/repository/data/collects_list_data.dart';
+import 'package:drift_frontend/repository/data/comment_data.dart';
+import 'package:drift_frontend/repository/data/comment_list_data.dart';
+import 'package:drift_frontend/repository/data/reply_list_data.dart';
 import 'package:drift_frontend/repository/data/common_website_data.dart';
 import 'package:drift_frontend/repository/data/knowledge_detail_list_data.dart';
 import 'package:drift_frontend/repository/data/knowledge_list_data.dart';
+import 'package:drift_frontend/repository/data/post_detail_data.dart';
 import 'package:drift_frontend/repository/data/post_list_data.dart';
 import 'package:drift_frontend/repository/data/profile_data.dart';
 import 'package:drift_frontend/repository/data/search_hot_keys_data.dart';
@@ -64,11 +68,9 @@ class Api {
   }
 
   Future<List<PostData>?> getPersonalPostList(num? userId, int page) async {
-    Map<String, dynamic>? params;
-    if (userId == null) {
-      params = {"page": page};
-    } else {
-      params = {"page": page, "user_id": userId};
+    Map<String, dynamic>? params = {"page": page};
+    if (userId != null) {
+      params.addAll({"author_id": userId});
     }
     Response response =
         await DioInstance.instance().get(path: "/post/personal", param: params);
@@ -77,11 +79,9 @@ class Api {
   }
 
   Future<List<PostData>?> getCollectionPostList(num? userId, int page) async {
-    Map<String, dynamic>? params;
-    if (userId == null) {
-      params = {"page": page};
-    } else {
-      params = {"page": page, "user_id": userId};
+    Map<String, dynamic>? params = {"page": page};
+    if (userId != null) {
+      params.addAll({"author_id": userId});
     }
     Response response = await DioInstance.instance()
         .get(path: "/post/collection", param: params);
@@ -97,14 +97,48 @@ class Api {
   }
 
   Future<List<PostData>?> getAllPostList(bool following, int page) async {
-    Map<String, dynamic>? params = {
-      "page": page,
-      "following": following
-    };
+    Map<String, dynamic>? params = {"page": page, "following": following};
     Response response =
         await DioInstance.instance().get(path: "/post/all", param: params);
     PostListData list = PostListData.fromJson(response.data);
     return list.postList;
+  }
+
+  Future<PostDetailData?> getPostDetail(num? postId) async {
+    Response response = await DioInstance.instance()
+        .get(path: "/post/detail", param: {"post_id": postId});
+    return PostDetailData.fromJson(response.data);
+  }
+
+  Future<List<CommentItemData>?> getPostCommentList(
+      num? postId, num? userId, int page) async {
+    Map<String, dynamic>? params = {"post_id": postId, "page": page};
+    if (userId != null) {
+      params.addAll({"author_id": userId});
+    }
+    Response response = await DioInstance.instance()
+        .get(path: "/comment/comment_list", param: params);
+    CommentListData list = CommentListData.fromJson(response.data);
+    return list.commentList;
+  }
+
+  Future<List<CommentData>?> getReplyList(
+      num? commentId, num? earliestReplyId, int page) async {
+    Map<String, dynamic>? params = {
+      "comment_id": commentId,
+      "earliest_reply_id": earliestReplyId,
+      "page": page
+    };
+    Response response = await DioInstance.instance()
+        .get(path: "/comment/reply_list", param: params);
+    ReplyListData list = ReplyListData.fromJson(response.data);
+    return list.replyList;
+  }
+
+  Future<num> getPostCommentCount(num? postId) async {
+    Response response = await DioInstance.instance()
+        .get(path: "/comment/comment_count", param: {"post_id": postId});
+    return response.data;
   }
 
   // 获取首页 banner 数据

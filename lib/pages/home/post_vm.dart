@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:drift_frontend/repository/api.dart';
 import 'package:drift_frontend/repository/data/post_list_data.dart';
 import 'package:flutter/material.dart';

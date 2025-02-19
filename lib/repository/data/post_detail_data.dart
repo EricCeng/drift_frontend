@@ -1,41 +1,40 @@
 import 'package:drift_frontend/repository/data/author_info_data.dart';
 
-class PostListData {
-  List<PostData>? postList;
-
-  PostListData.fromJson(dynamic json) {
-    postList = [];
-    if (json is List) {
-      for (var element in json) {
-        postList?.add(PostData.fromJson(element));
-      }
-    }
-  }
-}
-
-class PostData {
-  PostData({
+class PostDetailData {
+  PostDetailData({
     this.authorInfo,
     this.postId,
     this.title,
-    this.firstImageUrl,
+    this.content,
+    this.imageUrlList,
     this.releaseTime,
+    this.edited,
     this.likedCount,
+    this.collectedCount,
+    this.commentCount,
   });
 
-  PostData.fromJson(dynamic json) {
+  PostDetailData.fromJson(dynamic json) {
     authorInfo = AuthorInfoData.fromJson(json['author_info']);
     postId = json['post_id'];
     title = json['title'];
-    firstImageUrl = json['first_image_url'];
+    content = json['content'];
+    imageUrlList = json['image_url_list'];
     releaseTime = json['release_time'];
+    edited = json['edited'];
     likedCount = json['liked_count'];
+    collectedCount = json['collected_count'];
+    commentCount = json['comment_count'];
   }
 
   AuthorInfoData? authorInfo;
   num? postId;
   String? title;
-  String? firstImageUrl;
+  String? content;
+  String? imageUrlList;
   String? releaseTime;
+  bool? edited;
   num? likedCount;
+  num? collectedCount;
+  num? commentCount;
 }

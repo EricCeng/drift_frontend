@@ -29,13 +29,13 @@ class ResponseInterceptor extends Interceptor {
           } else if (rsp.errorCode == 401) {
             handler.reject(DioException(
                 requestOptions: response.requestOptions, message: "未登录"));
-            showToast("请先登录！");
+            showToast("请先登录");
             RouteUtils.navigatorKey.currentState?.pushNamedAndRemoveUntil(
                 RoutePath.loginPage, (route) => false);
           } else if (rsp.errorCode == 402) {
             handler.reject(DioException(
                 requestOptions: response.requestOptions, message: "会话已过期"));
-            showToast("会话已过期，请重新登录！");
+            showToast("会话已过期，请重新登录");
             RouteUtils.navigatorKey.currentState?.pushNamedAndRemoveUntil(
                 RoutePath.loginPage, (route) => false);
           } else {
@@ -53,6 +53,8 @@ class ResponseInterceptor extends Interceptor {
               requestOptions: response.requestOptions, message: "$e"));
         }
       }
+    } else if (response.statusCode == 0) {
+      showToast("网络连接断开，请检查网络设置");
     } else {
       handler.reject(DioException(requestOptions: response.requestOptions));
     }

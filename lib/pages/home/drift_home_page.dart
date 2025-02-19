@@ -1,17 +1,17 @@
 import 'dart:convert';
-import 'dart:developer';
 
-import 'package:drift_frontend/common_ui/smart_refresh/smart_refresh_widget.dart';
+import 'package:chinese_font_library/chinese_font_library.dart';
+import 'package:drift_frontend/pages/home/post_detail_page.dart';
 import 'package:drift_frontend/pages/home/post_vm.dart';
 import 'package:drift_frontend/repository/data/post_list_data.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:drift_frontend/route/route_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
-import 'package:waterfall_flow/waterfall_flow.dart';
 
 class DriftHomePage extends StatefulWidget {
   const DriftHomePage({super.key});
@@ -26,11 +26,14 @@ class _HomePageState extends State<DriftHomePage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final List<bool> _hasLoaded = [false, false];
+  late List<RefreshController> _refreshControllers;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(initialIndex: 1, length: 2, vsync: this);
+    _refreshControllers =
+        List.generate(2, (index) => RefreshController(initialRefresh: false));
   }
 
   @override
@@ -44,8 +47,16 @@ class _HomePageState extends State<DriftHomePage>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  TabPage(index: 0, hasLoaded: _hasLoaded),
-                  TabPage(index: 1, hasLoaded: _hasLoaded),
+                  TabPage(
+                    index: 0,
+                    hasLoaded: _hasLoaded,
+                    refreshController: _refreshControllers[0],
+                  ),
+                  TabPage(
+                    index: 1,
+                    hasLoaded: _hasLoaded,
+                    refreshController: _refreshControllers[1],
+                  ),
                 ],
               ),
             ),
@@ -86,6 +97,12 @@ class _HomePageState extends State<DriftHomePage>
             labelStyle: TextStyle(fontSize: 16.sp),
             unselectedLabelColor: Colors.grey,
             tabAlignment: TabAlignment.start,
+            onTap: (index) {
+              if (_tabController.index == index &&
+                  !_tabController.indexIsChanging) {
+                _refreshControllers[index].requestRefresh();
+              }
+            },
             tabs: const [
               Tab(text: '关注'),
               Tab(text: '发现'),
@@ -110,8 +127,13 @@ class _HomePageState extends State<DriftHomePage>
 class TabPage extends StatefulWidget {
   final int index;
   final List<bool> hasLoaded;
+  final RefreshController refreshController;
 
-  const TabPage({super.key, required this.index, required this.hasLoaded});
+  const TabPage(
+      {super.key,
+      required this.index,
+      required this.hasLoaded,
+      required this.refreshController});
 
   @override
   State<StatefulWidget> createState() {
@@ -121,17 +143,12 @@ class TabPage extends StatefulWidget {
 
 class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
   PostViewModel postViewModel = PostViewModel();
-  late RefreshController _refreshController;
+  final ScrollController _scrollController = ScrollController();
   bool following = false;
-
-  // 保存筛选的本地图片路径
-  List<String> imagePaths = [];
 
   @override
   void initState() {
     super.initState();
-    _loadAssets();
-    _refreshController = RefreshController();
     if (!widget.hasLoaded[widget.index]) {
       _refreshOrLoadMore(false, widget.index);
       // 标记该 tab 已加载
@@ -141,38 +158,17 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
 
   @override
   void dispose() {
-    _refreshController.dispose();
     super.dispose();
   }
 
   void _refreshOrLoadMore(bool loadMore, int tabIndex) {
     following = tabIndex == 0;
     postViewModel.getAllPostList(following, loadMore).then((value) {
-      log('loading');
       if (loadMore) {
-        _refreshController.loadComplete();
+        widget.refreshController.loadComplete();
       } else {
-        _refreshController.refreshCompleted();
+        widget.refreshController.refreshCompleted();
       }
-    });
-  }
-
-  // 加载既定的动态图片及计算图片宽高比
-  Future<void> _loadAssets() async {
-    // 获取 AssetManifest 中的所有资源路径
-    final manifestContent = await rootBundle.loadString('AssetManifest.json');
-    final Map<String, dynamic> manifestMap = json.decode(manifestContent);
-
-    // 筛选以 post_image 开头的 jpg 文件
-    final filteredPaths = manifestMap.keys
-        .where((path) =>
-            path.startsWith('assets/images/post_image') &&
-            path.endsWith('.jpg'))
-        .toList();
-
-    // 初始化宽高比列表
-    setState(() {
-      imagePaths = filteredPaths;
     });
   }
 
@@ -183,72 +179,88 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
       create: (context) {
         return postViewModel;
       },
-      child: SmartRefreshWidget(
-        controller: _refreshController,
-        onRefresh: () {
-          log('onRefresh');
-          _refreshOrLoadMore(false, widget.index);
-        },
-        onLoading: () {
-          _refreshOrLoadMore(true, widget.index);
-        },
-        child: Consumer<PostViewModel>(
-          builder: (context, viewModel, child) {
-            List<PostData> list =
-                following ? viewModel.followingPostList : viewModel.allPostList;
-            return _buildTabView(list);
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTabView(List<PostData> list) {
-    return Container(
-      color: Colors.grey[100],
-      // child: MasonryGridView.builder(
-      //   padding: EdgeInsets.all(5.w),
-      //   // 两列
-      //   gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(
-      //     crossAxisCount: 2,
-      //   ),
-      //   // 列间距
-      //   mainAxisSpacing: 5.w,
-      //   // 行间距
-      //   crossAxisSpacing: 5.w,
-      //   itemCount: list.length,
-      //   itemBuilder: (context, index) {
-      //     return GestureDetector(
-      //       onTap: () {
-      //         // 点击事件
-      //       },
-      //       child: _buildItem(index, list[index]),
-      //     );
-      //   },
-      // ),
-      child: WaterfallFlow.builder(
-        padding: const EdgeInsets.all(5.0),
-        gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 5.0.w,
-          mainAxisSpacing: 5.0.w,
-        ),
-        itemCount: list.length,
-        itemBuilder: (context, index) {
-          return GestureDetector(
-            onTap: () {
-              // 点击事件
-            },
-            child: _buildItem(index, list[index]),
+      child: Consumer<PostViewModel>(
+        builder: (context, viewModel, child) {
+          List<PostData> list =
+              following ? viewModel.followingPostList : viewModel.allPostList;
+          return Container(
+            color: Colors.grey[100],
+            child: SmartRefresher(
+              controller: widget.refreshController,
+              enablePullDown: true,
+              enablePullUp: true,
+              header: const ClassicHeader(
+                height: 60,
+                releaseText: '',
+                refreshingText: '',
+                completeText: '',
+                failedText: '',
+                idleText: '',
+                idleIcon: null,
+                failedIcon: null,
+                completeIcon: null,
+                releaseIcon: null,
+              ),
+              footer: const ClassicFooter(
+                height: 60,
+                loadStyle: LoadStyle.ShowWhenLoading,
+                failedText: '',
+                idleText: '',
+                loadingText: '',
+                noDataText: '',
+                canLoadingText: '',
+                canLoadingIcon: null,
+                idleIcon: null,
+              ),
+              scrollController: _scrollController,
+              onRefresh: () {
+                _refreshOrLoadMore(false, widget.index);
+              },
+              onLoading: () {
+                _refreshOrLoadMore(true, widget.index);
+              },
+              child: _buildTabView(list),
+            ),
           );
         },
       ),
     );
   }
 
+  Widget _buildTabView(List<PostData> list) {
+    return MasonryGridView.builder(
+      controller: _scrollController,
+      padding: EdgeInsets.all(5.w),
+      // 两列
+      gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+      ),
+      // 列间距
+      mainAxisSpacing: 4.w,
+      // 行间距
+      crossAxisSpacing: 4.w,
+      itemCount: list.length,
+      itemBuilder: (context, index) {
+        return GestureDetector(
+          onTap: () {
+            // 点击跳转至动态详情页面
+            RouteUtils.push(
+              context,
+              PostDetailPage(
+                postId: list[index].postId,
+                index: index,
+              ),
+            );
+          },
+          child: _buildItem(index, list[index]),
+        );
+      },
+    );
+  }
+
   Widget _buildItem(int index, PostData? post) {
     final width = MediaQuery.of(context).size.width / 2 - 5.w;
-    bool isLiked = post?.liked ?? false;
+    bool isLiked = post?.authorInfo?.liked ?? false;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -265,7 +277,7 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
                 topRight: Radius.circular(4.r),
               ),
               child: Image.asset(
-                imagePaths[index % imagePaths.length],
+                "assets/images/post_image${index % 20}.jpg",
                 fit: BoxFit.cover,
               ),
             ),
@@ -277,7 +289,6 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
               children: [
                 Text(
                   post?.title ?? "",
-                  textAlign: TextAlign.start,
                   style: TextStyle(fontSize: 14.sp),
                 ),
                 SizedBox(height: 10.h),
@@ -287,22 +298,26 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
                     CircleAvatar(
                       backgroundImage:
                           const AssetImage('assets/images/default_avatar.jpg'),
-                      radius: following ? 14.r : 10.r,
+                      radius: following ? 13.r : 10.r,
                     ),
                     SizedBox(width: 6.w),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "${post?.author}",
-                          style:
-                              TextStyle(fontSize: 10.sp, color: Colors.grey[700]),
+                          "${post?.authorInfo?.author}",
+                          style: TextStyle(
+                            fontSize: 10.sp,
+                            color: Colors.grey[700],
+                          ),
                         ),
                         if (following)
                           Text(
                             "${post?.releaseTime}",
                             style: TextStyle(
-                                fontSize: 10.sp, color: Colors.black38),
+                              fontSize: 9.sp,
+                              color: Colors.black38,
+                            ),
                           ),
                       ],
                     ),
@@ -313,45 +328,30 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
                       child: AnimatedScale(
                         scale: isLiked ? 1.2 : 1.0,
                         duration: const Duration(milliseconds: 200),
-                        child: Icon(
-                          isLiked ? PhosphorIconsFill.heart : PhosphorIconsRegular.heart,
-                          color: isLiked ? Colors.red : Colors.black45,
-                          size: 16.sp,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              isLiked
+                                  ? PhosphorIconsFill.heart
+                                  : PhosphorIconsRegular.heart,
+                              color: isLiked ? Colors.red : Colors.black45,
+                              size: 16.sp,
+                            ),
+                            SizedBox(width: 3.w),
+                            Text(
+                              post?.likedCount == 0
+                                  ? "赞"
+                                  : "${post?.likedCount}",
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    SizedBox(width: 3.w),
-                    // 点赞数
-                    GestureDetector(
-                      onTap: () {},
-                      child: Text(
-                        "5434",
-                        style: TextStyle(
-                          fontSize: 11.sp,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ),
-                    // Icon(
-                    //   (post?.liked ?? false)
-                    //       ? PhosphorIconsFill.heart
-                    //       : CupertinoIcons.heart,
-                    //   size: 16.sp,
-                    //   color:
-                    //       (post?.liked ?? false) ? Colors.red : Colors.black45,
-                    // ),
-                    // SizedBox(width: 3.w),
-                    // Text(
-                    //   "5434",
-                    //   style:
-                    //   TextStyle(fontSize: 11.sp, color: Colors.grey[700]),
-                    // ),
-                    // if (post?.likedCount != 0)
-                    //   Text(
-                    //     "${post?.likedCount}",
-                    //     style:
-                    //         TextStyle(fontSize: 10.sp, color: Colors.black54),
-                    //   ),
                   ],
                 ),
               ],

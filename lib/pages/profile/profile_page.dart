@@ -418,8 +418,9 @@ class _PersonalPageState extends State<DriftPersonalPage>
         borderRadius: BorderRadius.circular(12.r),
       ),
       child: Container(
-          margin: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-          child: content),
+        margin: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+        child: content,
+      ),
     );
   }
 
@@ -553,12 +554,12 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
   PostViewModel postViewModel = PostViewModel();
 
   // 保存筛选的本地图片路径
-  List<String> imagePaths = [];
+  // List<String> imagePaths = [];
 
   @override
   void initState() {
     super.initState();
-    _loadAssets();
+    // _loadAssets();
     if (!widget.hasLoaded[widget.index]) {
       _fetchTabData(widget.index);
       // 标记该 tab 已加载
@@ -590,23 +591,23 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
   }
 
   // 加载既定的动态图片及计算图片宽高比
-  Future<void> _loadAssets() async {
-    // 获取 AssetManifest 中的所有资源路径
-    final manifestContent = await rootBundle.loadString('AssetManifest.json');
-    final Map<String, dynamic> manifestMap = json.decode(manifestContent);
+  // Future<void> _loadAssets() async {
+  //   // 获取 AssetManifest 中的所有资源路径
+  //   final manifestContent = await rootBundle.loadString('AssetManifest.json');
+  //   final Map<String, dynamic> manifestMap = json.decode(manifestContent);
 
-    // 筛选以 post_image 开头的 jpg 文件
-    final filteredPaths = manifestMap.keys
-        .where((path) =>
-            path.startsWith('assets/images/post_image') &&
-            path.endsWith('.jpg'))
-        .toList();
+  //   // 筛选以 post_image 开头的 jpg 文件
+  //   final filteredPaths = manifestMap.keys
+  //       .where((path) =>
+  //           path.startsWith('assets/images/post_image') &&
+  //           path.endsWith('.jpg'))
+  //       .toList();
 
-    // 初始化宽高比列表
-    setState(() {
-      imagePaths = filteredPaths;
-    });
-  }
+  //   // 初始化宽高比列表
+  //   setState(() {
+  //     imagePaths = filteredPaths;
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -649,9 +650,9 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
           crossAxisCount: 2,
         ),
         // 列间距
-        mainAxisSpacing: 5.w,
+        mainAxisSpacing: 4.w,
         // 行间距
-        crossAxisSpacing: 5.w,
+        crossAxisSpacing: 4.w,
         itemCount: list.length,
         itemBuilder: (context, index) {
           return GestureDetector(
@@ -668,6 +669,7 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
   Widget _buildItem(int index, PostData? post) {
     // final aspectRatio = imageRatios[index];
     final width = MediaQuery.of(context).size.width / 2 - 5.w;
+    bool isLiked = post?.authorInfo?.liked ?? false;
     // 如果宽高比尚未计算完成，展示加载占位符
     // if (aspectRatio == null) {
     //   return Container(
@@ -693,7 +695,7 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
                 topRight: Radius.circular(4.r),
               ),
               child: Image.asset(
-                imagePaths[index % imagePaths.length],
+                "assets/images/post_image${index % 20}.jpg",
                 fit: BoxFit.cover,
               ),
             ),
@@ -706,7 +708,7 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
                 Text(
                   post?.title ?? "",
                   textAlign: TextAlign.start,
-                  style: TextStyle(fontSize: 15.sp),
+                  style: TextStyle(fontSize: 14.sp),
                 ),
                 SizedBox(height: 10.h),
                 Row(
@@ -719,25 +721,40 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
                     ),
                     SizedBox(width: 6.w),
                     Text(
-                      post?.author ?? "",
-                      style: TextStyle(fontSize: 12.sp, color: Colors.black54),
+                      post?.authorInfo?.author ?? "",
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        color: Colors.grey[700],
+                      ),
                     ),
                     const Spacer(),
-                    Icon(
-                      (post?.liked ?? false)
-                          ? PhosphorIconsFill.heart
-                          : PhosphorIconsRegular.heart,
-                      size: 18.sp,
-                      color:
-                          (post?.liked ?? false) ? Colors.red : Colors.black45,
-                    ),
-                    SizedBox(width: 3.w),
-                    if (post?.likedCount != 0)
-                      Text(
-                        "${post?.likedCount}",
-                        style:
-                            TextStyle(fontSize: 12.sp, color: Colors.black54),
+                    GestureDetector(
+                      onTap: () {},
+                      child: AnimatedScale(
+                        scale: isLiked ? 1.2 : 1.0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              isLiked
+                                  ? PhosphorIconsFill.heart
+                                  : PhosphorIconsRegular.heart,
+                              color: isLiked ? Colors.red : Colors.black45,
+                              size: 16.sp,
+                            ),
+                            SizedBox(width: 3.w),
+                            Text(
+                              post?.likedCount == 0 ? "赞" : "",
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                    ),
                   ],
                 ),
               ],
