@@ -1,12 +1,8 @@
-import 'dart:convert';
-
-import 'package:chinese_font_library/chinese_font_library.dart';
 import 'package:drift_frontend/pages/home/post_detail_page.dart';
 import 'package:drift_frontend/pages/home/post_vm.dart';
 import 'package:drift_frontend/repository/data/post_list_data.dart';
 import 'package:drift_frontend/route/route_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -181,8 +177,7 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
       },
       child: Consumer<PostViewModel>(
         builder: (context, viewModel, child) {
-          List<PostData> list =
-              following ? viewModel.followingPostList : viewModel.allPostList;
+          List<PostData> list = viewModel.postList;
           return Container(
             color: Colors.grey[100],
             child: SmartRefresher(
@@ -241,18 +236,20 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
       crossAxisSpacing: 4.w,
       itemCount: list.length,
       itemBuilder: (context, index) {
+        PostData post = list[index];
         return GestureDetector(
           onTap: () {
             // 点击跳转至动态详情页面
             RouteUtils.push(
               context,
               PostDetailPage(
-                postId: list[index].postId,
+                post: post,
                 index: index,
               ),
+              settings: RouteSettings(arguments: context.read<PostViewModel>()),
             );
           },
-          child: _buildItem(index, list[index]),
+          child: _buildItem(index, post),
         );
       },
     );
@@ -261,6 +258,7 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
   Widget _buildItem(int index, PostData? post) {
     final width = MediaQuery.of(context).size.width / 2 - 5.w;
     bool isLiked = post?.authorInfo?.liked ?? false;
+    num likedCount = postViewModel.postList[widget.index].likedCount ?? 0;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -324,7 +322,18 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
                     const Spacer(),
                     // 点赞按钮
                     GestureDetector(
-                      onTap: () {},
+                      onTap: () {
+                        isLiked = !isLiked;
+                        if (isLiked) {
+                          likedCount++;
+                        } else {
+                          likedCount--;
+                        }
+                        setState(() {
+                          post?.authorInfo?.liked = isLiked;
+                          post?.likedCount = likedCount;
+                        });
+                      },
                       child: AnimatedScale(
                         scale: isLiked ? 1.2 : 1.0,
                         duration: const Duration(milliseconds: 200),
@@ -340,9 +349,7 @@ class _TabPageState extends State<TabPage> with AutomaticKeepAliveClientMixin {
                             ),
                             SizedBox(width: 3.w),
                             Text(
-                              post?.likedCount == 0
-                                  ? "赞"
-                                  : "${post?.likedCount}",
+                              likedCount == 0 ? "赞" : "$likedCount",
                               style: TextStyle(
                                 fontSize: 12.sp,
                                 color: Colors.grey[700],

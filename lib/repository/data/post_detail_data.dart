@@ -19,7 +19,12 @@ class PostDetailData {
     postId = json['post_id'];
     title = json['title'];
     content = json['content'];
-    imageUrlList = json['image_url_list'];
+    if (json['image_url_list'] != null) {
+      imageUrlList = [];
+      json['image_url_list'].forEach((v) {
+        imageUrlList?.add(v);
+      });
+    }
     releaseTime = json['release_time'];
     edited = json['edited'];
     likedCount = json['liked_count'];
@@ -31,7 +36,7 @@ class PostDetailData {
   num? postId;
   String? title;
   String? content;
-  String? imageUrlList;
+  List<String>? imageUrlList;
   String? releaseTime;
   bool? edited;
   num? likedCount;

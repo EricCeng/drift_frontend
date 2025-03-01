@@ -20,12 +20,31 @@ class CommentPage extends StatefulWidget {
 }
 
 class _CommentPageState extends State<CommentPage> {
+  CommentReplyViewModel commentReplyViewModel = CommentReplyViewModel();
   bool isFirstClick = true;
+  num replyCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    replyCount = widget.commentItem.replyCount ?? 0;
+    commentReplyViewModel.setEarliestReply(widget.commentItem.earliestReply);
+  }
+
+  void _loadMore() {
+    commentReplyViewModel.getReplyList(
+      widget.commentItem.comment?.commentId,
+      widget.commentItem.earliestReply?.commentId,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Padding(
+    return ChangeNotifierProvider(
+      create: (context) {
+        return commentReplyViewModel;
+      },
+      child: Padding(
         padding: EdgeInsets.symmetric(vertical: 10.h),
         child: Column(
           children: [
@@ -50,9 +69,7 @@ class _CommentPageState extends State<CommentPage> {
             // 回复列表
             _buildReplyList(),
             // 展示更多回复
-            if (widget.commentItem.replyCount != null &&
-                widget.commentItem.replyCount! > 0)
-              _buildMoreReplyButton(widget.commentItem.replyCount),
+            if (replyCount > 0) _buildMoreReplyButton(),
           ],
         ),
       ),
@@ -249,6 +266,7 @@ class _CommentPageState extends State<CommentPage> {
 
   Widget _buildLikeButton(CommentData? item) {
     bool liked = item?.authorInfo?.liked ?? false;
+    num likedCount = item?.likedCount ?? 0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -265,7 +283,7 @@ class _CommentPageState extends State<CommentPage> {
           ),
         ),
         SizedBox(width: 3.w),
-        if (item?.likedCount != 0)
+        if (likedCount != 0)
           Text(
             "${item?.likedCount}",
             style: TextStyle(
@@ -277,7 +295,7 @@ class _CommentPageState extends State<CommentPage> {
     );
   }
 
-  Widget _buildMoreReplyButton(num? replyCount) {
+  Widget _buildMoreReplyButton() {
     return Padding(
       padding: EdgeInsets.only(left: 45.w, top: 12.w),
       child: Row(
@@ -294,7 +312,13 @@ class _CommentPageState extends State<CommentPage> {
           SizedBox(
             height: 20.h,
             child: TextButton(
-              onPressed: () {},
+              onPressed: () {
+                _loadMore();
+                setState(() {
+                  isFirstClick = false;
+                  replyCount -= 5;
+                });
+              },
               style: TextButton.styleFrom(
                 padding: EdgeInsets.symmetric(
                   horizontal: 7.w,

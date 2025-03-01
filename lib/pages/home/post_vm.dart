@@ -6,13 +6,11 @@ class PostViewModel with ChangeNotifier {
   List<PostData> personalPostList = [];
   List<PostData> collectionPostList = [];
   List<PostData> likePostList = [];
-  List<PostData> allPostList = [];
-  List<PostData> followingPostList = [];
+  List<PostData> postList = [];
   int personalPage = 0;
   int collectionPage = 0;
   int likePage = 0;
-  int allPage = 0;
-  int followingPage = 0;
+  int postPage = 0;
 
   Future getPersonalPostList(num? userId) async {
     List<PostData>? list =
@@ -42,22 +40,18 @@ class PostViewModel with ChangeNotifier {
 
   Future getAllPostList(bool following, bool loadMore) async {
     if (loadMore) {
-      following ? followingPage++ : allPage++;
+      postPage++;
     } else {
-      following ? followingPage = 0 : allPage = 0;
+      postPage = 0;
     }
-    List<PostData>? list = await Api.instance
-        .getAllPostList(following, following ? followingPage : allPage);
+    List<PostData>? list =
+        await Api.instance.getAllPostList(following, postPage);
     if (list != null && list.isNotEmpty) {
-      if (following) {
-        followingPostList.addAll(list);
-      } else {
-        allPostList.addAll(list);
-      }
+      postList.addAll(list);
       notifyListeners();
     } else {
-      if (loadMore && (following ? followingPage : allPage) > 0) {
-        following ? followingPage-- : allPage--;
+      if (loadMore && postPage > 0) {
+        postPage--;
       }
     }
   }
